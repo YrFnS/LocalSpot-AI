@@ -9,9 +9,11 @@ import { CategorySelector } from './features/discovery/CategorySelector';
 import { AudioVisualizer } from './features/visualization/AudioVisualizer';
 import { OracleOverlay } from './features/live/OracleOverlay';
 import { CuratorPanel } from './features/curator/CuratorPanel';
-import { searchLocalBusinesses, getFeaturedBusinesses, speakDescription } from './services/geminiService';
+import { searchLocalBusinesses, getFeaturedBusinesses, speakDescription, getAiSuggestions } from './services/geminiService';
 import { useFavorites } from './hooks/useFavorites';
 import { useLiveSession } from './hooks/useLiveSession';
+import { useGeolocation } from './hooks/useGeolocation';
+import { getThemeForQuery, THEMES } from './utils/themeUtils';
 import { Business, SearchState, ViewMode, FilterState } from './types';
 import { filterBusinesses } from './utils/filterUtils';
 
@@ -19,17 +21,6 @@ enum Tab {
     SEARCH = 'SEARCH',
     FAVORITES = 'FAVORITES'
 }
-
-const THEMES: Record<string, string> = {
-    default: 'from-orange-500/10 via-background to-background',
-    coffee: 'from-amber-700/20 via-orange-900/10 to-background',
-    food: 'from-red-900/20 via-orange-900/10 to-background',
-    drinks: 'from-purple-900/20 via-blue-900/10 to-background',
-    parks: 'from-emerald-900/20 via-green-900/10 to-background',
-    art: 'from-pink-900/20 via-rose-900/10 to-background',
-    shop: 'from-yellow-700/20 via-amber-900/10 to-background',
-    music: 'from-indigo-900/20 via-violet-900/10 to-background'
-};
 
 const App: React.FC = () => {
   const [state, setState] = useState<SearchState>({
@@ -41,14 +32,16 @@ const App: React.FC = () => {
     error: null
   });
 
+  const { location: userLocation } = useGeolocation();
+
   const [activeTab, setActiveTab] = useState<Tab>(Tab.SEARCH);
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.LIST);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const [weather] = useState<string>("Sunny, 22°C");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [themeClass, setThemeClass] = useState(THEMES.default);
   const [isOracleOpen, setIsOracleOpen] = useState(false);
   const [isCuratorOpen, setIsCuratorOpen] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
   const { favorites, toggleFavorite, isFavorite, updateNote, addTag, removeTag, getFavorite } = useFavorites();
   
@@ -60,46 +53,37 @@ const App: React.FC = () => {
   
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Sync geolocation hook with local state and trigger initial data
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const loc = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-        setState(s => ({ ...s, userLocation: loc }));
+    if (userLocation) {
+        setState(s => ({ ...s, userLocation }));
+        
+        // Only fetch if we haven't already and aren't currently searching
         if (state.results.length === 0 && !state.isSearching) {
-            getFeaturedBusinesses(loc, weather).then(featured => setState(s => ({ ...s, results: featured }))).catch(console.error);
+            getFeaturedBusinesses(userLocation)
+                .then(featured => setState(s => ({ ...s, results: featured })))
+                .catch(console.error);
+            
+            getAiSuggestions(userLocation)
+                .then(setAiSuggestions)
+                .catch(console.error);
         }
-      },
-      (err) => {
-        const defaultLoc = { latitude: 37.7749, longitude: -122.4194 };
-        setState(s => ({ ...s, userLocation: defaultLoc }));
-        if (state.results.length === 0 && !state.isSearching) {
-            getFeaturedBusinesses(defaultLoc, weather).then(featured => setState(s => ({ ...s, results: featured }))).catch(console.error);
-        }
-      }
-    );
-  }, []);
-
-  const updateThemeFromQuery = (query: string) => {
-      const q = query.toLowerCase();
-      let found = false;
-      for (const key of Object.keys(THEMES)) {
-          if (q.includes(key)) { setThemeClass(THEMES[key]); found = true; break; }
-      }
-      if (!found) setThemeClass(THEMES.default);
-  };
+    }
+  }, [userLocation, state.results.length, state.isSearching]);
 
   const handleSearch = useCallback(async (query: string) => {
     setActiveTab(Tab.SEARCH);
     setState(s => ({ ...s, isSearching: true, query, error: null, selectedBusinessId: null }));
     setShowDetailModal(false);
-    updateThemeFromQuery(query);
+    setThemeClass(getThemeForQuery(query));
+    
     try {
-      const { businesses } = await searchLocalBusinesses(query, state.userLocation, weather);
+      const { businesses } = await searchLocalBusinesses(query, state.userLocation);
       setState(s => ({ ...s, results: businesses, isSearching: false }));
     } catch (error) {
       setState(s => ({ ...s, isSearching: false, error: 'Connection failed.' }));
     }
-  }, [state.userLocation, weather]);
+  }, [state.userLocation]);
 
   const handleLiveToolCall = async (name: string, args: any) => {
       if (name === 'searchMap' && args.query) {
@@ -128,8 +112,6 @@ const App: React.FC = () => {
 
   const handleSelectBusiness = (id: string) => {
     setState(s => ({ ...s, selectedBusinessId: id }));
-    // In GRID mode, allow selection to highlight, but maybe we want to open modal?
-    // Let's open modal for GRID mode clicks as it feels more app-like
     if (viewMode === ViewMode.GRID) {
         setShowDetailModal(true);
     }
@@ -179,7 +161,7 @@ const App: React.FC = () => {
                 <h1 className="text-lg font-bold tracking-tighter hidden md:block">LOCALSPOT</h1>
             </div>
             <div className="flex-1 max-w-2xl">
-                <SearchBar onSearch={handleSearch} isSearching={state.isSearching} />
+                <SearchBar onSearch={handleSearch} isSearching={state.isSearching} suggestions={aiSuggestions} />
             </div>
             <div className="flex items-center gap-2 shrink-0">
                 <AudioVisualizer isPlaying={isAudioPlaying} />

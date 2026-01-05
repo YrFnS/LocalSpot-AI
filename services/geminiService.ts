@@ -1,150 +1,118 @@
 import { GoogleGenAI, Modality } from "@google/genai";
-import { Business, Coordinates, BookingSlot } from "../types";
+import { Business, Coordinates } from "../types";
 import { decodeBase64, decodeAudioData, getAudioContext } from "../utils/audioUtils";
+import { getPhotosForType } from "./imageService";
+import { calculateDistanceMeters } from "../utils/geoUtils";
 
 // Initialize Gemini Client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const generateMockSlots = (): BookingSlot[] => {
-    const slots: BookingSlot[] = [];
-    const startHour = 17; // 5 PM
-    for (let i = 0; i < 8; i++) {
-        const hour = startHour + Math.floor(i / 2);
-        const mins = i % 2 === 0 ? "00" : "30";
-        slots.push({
-            time: `${hour}:${mins}`,
-            available: Math.random() > 0.3 // 70% chance available
-        });
-    }
-    return slots;
-};
-
-// Curated Unsplash Images for Aesthetics
-const PHOTO_MAP: Record<string, string[]> = {
-    restaurant: [
-        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
-        "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&q=80",
-        "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80"
-    ],
-    cafe: [
-        "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80",
-        "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&q=80",
-        "https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=800&q=80"
-    ],
-    bar: [
-        "https://images.unsplash.com/photo-1514362545857-3bc16549766b?w=800&q=80",
-        "https://images.unsplash.com/photo-1574096079513-d8259960295d?w=800&q=80",
-        "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=800&q=80"
-    ],
-    park: [
-        "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
-        "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80"
-    ],
-    art: [
-        "https://images.unsplash.com/photo-1518998053901-5348d3969104?w=800&q=80",
-        "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=800&q=80"
-    ],
-    default: [
-        "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&q=80",
-        "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80"
-    ]
-};
-
-const getPhotosForType = (type: string): {name: string, widthPx: number, heightPx: number, authorAttributions: any[]}[] => {
-    const key = Object.keys(PHOTO_MAP).find(k => type.toLowerCase().includes(k)) || 'default';
-    return PHOTO_MAP[key].map(url => ({
-        name: url,
-        widthPx: 800,
-        heightPx: 600,
-        authorAttributions: []
-    }));
-};
-
 export const getFeaturedBusinesses = async (
-    userLocation: Coordinates | null,
-    weather: string
+    userLocation: Coordinates | null
 ): Promise<Business[]> => {
-    // We simulate a search for "Trending" to reuse the logic
     const { businesses } = await searchLocalBusinesses(
-        "trending cool spots, hidden gems, highly rated", 
-        userLocation, 
-        weather
+        "trending spots right now", 
+        userLocation
     );
-    return businesses.slice(0, 5); // Return top 5
+    return businesses.slice(0, 5); 
 };
 
-// Search Local Businesses using Grounding
+export const getAiSuggestions = async (userLocation: Coordinates | null): Promise<string[]> => {
+    try {
+        const timeContext = new Date().toLocaleString('en-US', { 
+            weekday: 'long', hour: 'numeric', minute: 'numeric' 
+        });
+        
+        // Use Gemini 3 Flash for high-speed simple generation
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `
+                Context: User is in ${userLocation ? `${userLocation.latitude}, ${userLocation.longitude}` : 'San Francisco'}.
+                Time: ${timeContext}.
+                
+                Task: Generate 5 short, distinct, punchy local search queries relevant to right now. 
+                Examples: "Late night ramen", "Quiet cafes", "Live jazz".
+                
+                Output: JSON Array of strings only.
+            `,
+            config: {
+                responseMimeType: 'application/json'
+            }
+        });
+
+        return JSON.parse(response.text || "[]");
+    } catch (e) {
+        return ["Best coffee nearby", "Lunch spots", "Parks", "Dinner dates", "Cocktail bars"];
+    }
+};
+
 export const searchLocalBusinesses = async (
   query: string, 
-  userLocation: Coordinates | null,
-  weatherCondition?: string
+  userLocation: Coordinates | null
 ): Promise<{ text: string; businesses: Business[] }> => {
   
   try {
+    // CRITICAL FIX: Google Maps Grounding is only supported on Gemini 2.5 series.
+    // Do not use Gemini 3 for the search step involving the googleMaps tool.
     const model = 'gemini-2.5-flash';
     
-    // Construct retrieval config if location is available
     const retrievalConfig = userLocation
-      ? {
-          latLng: {
-            latitude: userLocation.latitude,
-            longitude: userLocation.longitude,
-          },
-        }
+      ? { latLng: { latitude: userLocation.latitude, longitude: userLocation.longitude } }
       : undefined;
 
     const timeContext = new Date().toLocaleString('en-US', { 
-        weekday: 'long', 
-        hour: 'numeric', 
-        minute: 'numeric' 
+        weekday: 'long', hour: 'numeric', minute: 'numeric' 
     });
 
-    // Enhanced System Instruction with Weather
-    const systemInstruction = `
-      Current Time: ${timeContext}.
-      User Location: ${userLocation ? `${userLocation.latitude}, ${userLocation.longitude}` : 'Unknown'}.
-      Weather Condition: ${weatherCondition || 'Clear'}.
-      Role: You are LocalSpot, an avant-garde local discovery engine. 
-      Task: Search for businesses matching the user's request. 
-      Adaptation: If the weather is poor (rain, snow, cold), prioritize indoor venues or cozy spots. If sunny, suggest outdoor seating or parks.
-      Style: Return structured, actionable data with distinct "vibe" descriptors.
-    `;
-
-    const response = await ai.models.generateContent({
+    // STEP 1: Grounded Search (Real Data)
+    const groundResponse = await ai.models.generateContent({
       model,
-      contents: query,
+      contents: `Find 6-8 distinct businesses for "${query}" near ${userLocation ? `${userLocation.latitude},${userLocation.longitude}` : 'me'}. 
+      Include address, rating, review count, and open status.`,
       config: {
         tools: [{ googleMaps: {} }],
-        toolConfig: retrievalConfig ? {
-          retrievalConfig: retrievalConfig
-        } : undefined, 
-        systemInstruction: systemInstruction,
+        toolConfig: retrievalConfig ? { retrievalConfig } : undefined, 
+        systemInstruction: `Current Time: ${timeContext}. Find REAL places.`,
       },
     });
 
+    const rawText = groundResponse.text || "";
+
+    // STEP 2: Structure Data & AI Inference
+    // We can use Gemini 3 Flash here for better formatting as it doesn't require tools
     const structuredResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: `Context: User searched for "${query}" near ${userLocation?.latitude}, ${userLocation?.longitude} at ${timeContext}. Weather is ${weatherCondition || 'Clear'}.
+        model: 'gemini-3-flash-preview',
+        contents: `
+        SOURCE TEXT:
+        ${rawText}
+
+        CONTEXT:
+        User Location: ${userLocation?.latitude}, ${userLocation?.longitude}
+        Current Time: ${timeContext}
+
+        TASK:
+        1. Extract business details into JSON.
+        2. Infer a short "Vibe" (e.g., "Cozy", "Industrial").
+        3. If the place is a Restaurant/Bar/Cafe, GENERATE 'slots' (Array<{time: string, available: boolean}>) for the next few hours based on its likely busyness.
         
-        Generate a JSON list of 6 distinct businesses that fit this.
-        Schema: Array<{
+        SCHEMA:
+        Array<{
             name: string, 
             description: string, 
             type: string, 
-            price: string, // $, $$, $$$
-            latOffset: number, // small float -0.01 to 0.01
-            lngOffset: number, 
-            rating: number, // 3.0 to 5.0
-            vibe: string, // e.g. "Moody", "Bustling", "Intimate"
-            bestFor: string[], // e.g. ["Date", "Coffee"]
-            openNow: boolean,
+            price: string, 
             address: string,
+            latitude: number,
+            longitude: number,
+            rating: number,
+            ratingCount: number,
+            vibe: string, 
+            bestFor: string[],
+            openNow: boolean,
+            slots: Array<{time: string, available: boolean}>, 
             reviews: Array<{user: string, text: string, rating: number}>
-        }>. 
-        Rules: 
-        1. latOffset/lngOffset must be small relative to user.
-        2. Description should be short, punchy, editorial style.
-        3. Make reviews sound authentic.`,
+        }>
+        `,
         config: {
             responseMimeType: 'application/json'
         }
@@ -155,90 +123,68 @@ export const searchLocalBusinesses = async (
         structuredData = JSON.parse(structuredResponse.text || "[]");
     } catch (e) {
         console.error("Failed to parse structured JSON", e);
+        return { text: rawText, businesses: [] };
     }
 
     const businesses: Business[] = structuredData.map((item, idx) => {
-        const isBookable = ["restaurant", "bar", "cafe", "spa"].some(t => item.type?.toLowerCase().includes(t)) || Math.random() > 0.5;
-        // Mock Verification status
-        const isVerified = Math.random() > 0.7; 
+        // Fallback location jitter if AI fails to extract exact coords
+        const lat = item.latitude || (userLocation?.latitude || 0) + (Math.random() * 0.01 - 0.005);
+        const lng = item.longitude || (userLocation?.longitude || 0) + (Math.random() * 0.01 - 0.005);
+        const bizLocation = { latitude: lat, longitude: lng };
 
         return {
-            id: `gen-biz-${idx}-${Date.now()}`,
+            id: `biz-${idx}-${Date.now()}`,
             name: item.name,
             description: item.description,
             types: [item.type],
-            priceLevel: item.price,
-            address: item.address || "Local Address",
-            location: userLocation ? {
-                latitude: userLocation.latitude + (item.latOffset || 0),
-                longitude: userLocation.longitude + (item.lngOffset || 0)
-            } : { latitude: 0, longitude: 0 },
-            rating: item.rating,
-            ratingCount: Math.floor(Math.random() * 500),
-            vibe: item.vibe,
-            bestFor: item.bestFor,
-            openNow: item.openNow,
-            verified: isVerified,
-            phoneNumber: "(555) 123-4567",
-            hours: "09:00 AM - 10:00 PM",
-            bookingAvailable: isBookable,
-            slots: isBookable ? generateMockSlots() : undefined,
-            photos: getPhotosForType(item.type),
+            priceLevel: item.price || "$$",
+            address: item.address || "Local",
+            location: bizLocation,
+            distanceMeters: userLocation ? calculateDistanceMeters(userLocation, bizLocation) : 0,
+            rating: item.rating || 4.5,
+            ratingCount: item.ratingCount || 100,
+            vibe: item.vibe || "Local",
+            bestFor: item.bestFor || [],
+            openNow: item.openNow !== undefined ? item.openNow : true, 
+            verified: Math.random() > 0.8,
+            phoneNumber: "(555) Local-01",
+            hours: "10:00 AM - 10:00 PM",
+            bookingAvailable: item.slots && item.slots.length > 0,
+            slots: item.slots,
+            photos: getPhotosForType(item.type || 'default'), 
             reviews: item.reviews?.map((r: any) => ({
-                authorAttribution: { displayName: r.user, photoUri: '' },
+                authorAttribution: { displayName: r.user || 'Local Guide', photoUri: '' },
                 text: { text: r.text, languageCode: 'en' },
-                rating: r.rating,
+                rating: r.rating || 5,
                 relativePublishTimeDescription: 'Recently'
             }))
         };
     });
 
     return {
-      text: response.text || "Here are some results.",
+      text: rawText,
       businesses: businesses,
     };
 
   } catch (error) {
     console.error("Search Error:", error);
-    throw error;
+    return { text: "Search unavailable", businesses: [] }; 
   }
 };
 
-// Ask a context-aware question about a business
 export const askBusinessQuestion = async (business: Business, question: string): Promise<string> => {
     try {
-        const context = `
-            Business: ${business.name}
-            Type: ${business.types?.join(', ')}
-            Vibe: ${business.vibe}
-            Description: ${business.description}
-            Reviews: ${business.reviews?.map(r => r.text.text).join(' | ')}
-        `;
-
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `Context: ${context}
-            
-            User Question: "${question}"
-            
-            Task: Answer the user's question concisely (max 2 sentences) based on the business details. 
-            Tone: Helpful, local expert, slightly casual.
-            If the answer isn't explicitly in the data, infer it from the 'vibe' and 'type' but be honest about inferring.`
+            model: 'gemini-3-flash-preview',
+            contents: `Business: ${business.name}. Details: ${JSON.stringify(business)}. Question: "${question}". Answer concisely as a local guide.`
         });
-
-        return response.text || "I couldn't find specific info on that, but it seems worth checking out!";
+        return response.text || "I couldn't find that info.";
     } catch (error) {
-        console.error("Question Error:", error);
-        return "I'm having trouble connecting to the concierge service right now.";
+        return "Concierge unavailable.";
     }
 };
 
-// Text-to-Speech for Business Descriptions with State Callbacks
-export const speakDescription = async (
-    text: string, 
-    onStart?: () => void, 
-    onEnd?: () => void
-): Promise<void> => {
+export const speakDescription = async (text: string, onStart?: () => void, onEnd?: () => void): Promise<void> => {
   try {
     const ctx = getAudioContext();
     const response = await ai.models.generateContent({
@@ -246,37 +192,19 @@ export const speakDescription = async (
       contents: [{ parts: [{ text }] }],
       config: {
         responseModalities: [Modality.AUDIO],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Kore' },
-          },
-        },
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
       },
     });
-
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    if (!base64Audio) throw new Error("No audio data returned");
-
-    const audioBuffer = await decodeAudioData(
-      decodeBase64(base64Audio),
-      ctx,
-      24000,
-      1
-    );
-
+    if (!base64Audio) throw new Error("No audio");
+    const audioBuffer = await decodeAudioData(decodeBase64(base64Audio), ctx, 24000, 1);
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(ctx.destination);
-    
-    source.onended = () => {
-        if (onEnd) onEnd();
-    };
-
+    source.onended = () => { if (onEnd) onEnd(); };
     if (onStart) onStart();
     source.start();
-
   } catch (error) {
-    console.error("TTS Error:", error);
     if (onEnd) onEnd();
   }
 };

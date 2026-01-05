@@ -12,22 +12,45 @@ interface RadarMapProps {
 const RadarMap: React.FC<RadarMapProps> = ({ userLocation, businesses, onSelect, selectedId, onRescan }) => {
   const size = 600; // SVG canvas size
   const center = size / 2;
-  const range = 0.03; // ~3km approx degrees delta
+
+  // Calculate dynamic range based on furthest business
+  const dynamicRange = useMemo(() => {
+    if (!userLocation || businesses.length === 0) return 0.03; // Default ~3km
+
+    let maxDiff = 0;
+    businesses.forEach(b => {
+        if (b.location) {
+            const dy = Math.abs(userLocation.latitude - b.location.latitude);
+            const dx = Math.abs(userLocation.longitude - b.location.longitude);
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist > maxDiff) maxDiff = dist;
+        }
+    });
+
+    // Add 20% padding, but keep a minimum floor of 0.01 degrees so we don't zoom in too much on a single point
+    return Math.max(0.01, maxDiff * 1.2);
+  }, [userLocation, businesses]);
 
   const points = useMemo(() => {
     if (!userLocation) return [];
     return businesses.map((b) => {
       if (!b.location) return null;
-      const dy = (userLocation.latitude - b.location.latitude) / range;
-      const dx = (b.location.longitude - userLocation.longitude) / range;
+      // Normalize to the dynamic range
+      const dy = (userLocation.latitude - b.location.latitude) / dynamicRange;
+      const dx = (b.location.longitude - userLocation.longitude) / dynamicRange;
       
-      // Scale to canvas
+      // Scale to canvas (Y axis flipped in SVG, but latitude grows Up, so -dy is usually correct, 
+      // but here we just want relative placement. Standard mapping: +Lat = Up (smaller Y))
+      // Actually standard SVG: Y increases downwards. Lat increases Upwards.
+      // So dy > 0 (biz is north) -> y should be smaller.
+      // Formula: center - (dy * size/2)
+      
       const x = center + dx * (size / 2);
-      const y = center + dy * (size / 2); 
+      const y = center + dy * (size / 2); // Note: Simple projection, assuming lat/lon are linear which is fine for small local areas
 
       return { ...b, cx: x, cy: y };
     }).filter(Boolean) as (Business & { cx: number; cy: number })[];
-  }, [userLocation, businesses, center]);
+  }, [userLocation, businesses, center, dynamicRange]);
 
   if (!userLocation) {
     return (
@@ -100,7 +123,7 @@ const RadarMap: React.FC<RadarMapProps> = ({ userLocation, businesses, onSelect,
       </svg>
       
       <div className="absolute bottom-4 left-4 font-mono text-xs text-zinc-500">
-         RADAR_VIEW // SCANNING AREA
+         RADAR_VIEW // SCANNING {(dynamicRange * 111).toFixed(1)}KM
       </div>
 
       {/* Rescan Button */}

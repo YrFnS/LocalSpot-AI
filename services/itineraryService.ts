@@ -6,7 +6,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 export const generateItinerary = async (
   prompt: string,
   contextBusinesses: Business[]
-): Promise<Itinerary> => {
+): Promise<Itinerary | null> => {
   try {
     const businessContext = contextBusinesses
       .slice(0, 15) // Limit context to top 15 results to save tokens
@@ -23,8 +23,9 @@ export const generateItinerary = async (
       4. Return pure JSON.
     `;
 
+    // Use Gemini 3 Pro for complex reasoning and planning tasks
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-preview',
       contents: `
         User Request: "${prompt}"
         Context List:
@@ -68,14 +69,6 @@ export const generateItinerary = async (
 
   } catch (error) {
     console.error("Itinerary Gen Error:", error);
-    // Fallback Mock
-    return {
-        title: "The Classic Evening",
-        totalCostEstimate: "$$",
-        items: [
-            { id: '1', timeOffset: "6:00 PM", title: "Sunset Walk", description: "Enjoy the golden hour.", type: "ACTIVITY" },
-            { id: '2', timeOffset: "7:30 PM", title: "Local Dinner", description: "Grab some great food nearby.", type: "FOOD" }
-        ]
-    };
+    return null;
   }
 };

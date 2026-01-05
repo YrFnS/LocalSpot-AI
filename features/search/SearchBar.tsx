@@ -3,22 +3,10 @@ import React, { useState, useEffect, useRef } from 'react';
 interface SearchBarProps {
   onSearch: (query: string) => void;
   isSearching: boolean;
+  suggestions: string[];
 }
 
-const COMMON_SUGGESTIONS = [
-  "best coffee for remote work",
-  "romantic dinner spots",
-  "open late food",
-  "family friendly parks",
-  "quiet study places",
-  "live jazz music",
-  "vegan restaurants",
-  "boutique shopping",
-  "craft cocktail bars",
-  "rooftop views"
-];
-
-export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching }) => {
+export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, suggestions }) => {
   const [query, setQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -80,8 +68,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching }) =
   };
 
   const filteredSuggestions = query
-    ? COMMON_SUGGESTIONS.filter(s => s.toLowerCase().includes(query.toLowerCase()))
-    : COMMON_SUGGESTIONS.slice(0, 5); // Show top 5 if empty
+    ? suggestions.filter(s => s.toLowerCase().includes(query.toLowerCase()))
+    : suggestions;
 
   return (
     <form ref={wrapperRef} onSubmit={handleSubmit} className="relative w-full max-w-2xl mx-auto group z-50">
@@ -129,7 +117,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching }) =
       {showSuggestions && filteredSuggestions.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-950/95 backdrop-blur-md border border-zinc-800 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-100 overflow-hidden">
           <div className="px-3 py-2 text-[10px] font-mono text-zinc-500 bg-zinc-900/50 uppercase tracking-widest border-b border-zinc-800">
-             SUGGESTED QUERIES
+             SUGGESTED FOR YOU (AI)
           </div>
           {filteredSuggestions.map((suggestion, idx) => (
             <button
