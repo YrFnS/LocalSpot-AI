@@ -5,10 +5,35 @@ interface SearchBarProps {
   isSearching: boolean;
 }
 
+const COMMON_SUGGESTIONS = [
+  "best coffee for remote work",
+  "romantic dinner spots",
+  "open late food",
+  "family friendly parks",
+  "quiet study places",
+  "live jazz music",
+  "vegan restaurants",
+  "boutique shopping",
+  "craft cocktail bars",
+  "rooftop views"
+];
+
 export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching }) => {
   const [query, setQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const wrapperRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -23,6 +48,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching }) =
             setQuery(transcript);
             onSearch(transcript);
             setIsListening(false);
+            setShowSuggestions(false);
         };
         
         recognitionRef.current.onerror = () => setIsListening(false);
@@ -41,11 +67,24 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching }) =
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) onSearch(query);
+    if (query.trim()) {
+      onSearch(query);
+      setShowSuggestions(false);
+    }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setQuery(suggestion);
+    onSearch(suggestion);
+    setShowSuggestions(false);
+  };
+
+  const filteredSuggestions = query
+    ? COMMON_SUGGESTIONS.filter(s => s.toLowerCase().includes(query.toLowerCase()))
+    : COMMON_SUGGESTIONS.slice(0, 5); // Show top 5 if empty
+
   return (
-    <form onSubmit={handleSubmit} className="relative w-full max-w-2xl mx-auto group">
+    <form ref={wrapperRef} onSubmit={handleSubmit} className="relative w-full max-w-2xl mx-auto group z-50">
       <div className={`
         absolute -inset-0.5 rounded-none bg-gradient-to-r from-primary to-accent opacity-30 blur 
         transition duration-1000 group-hover:opacity-60 group-hover:duration-200
@@ -55,7 +94,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching }) =
         <input
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setShowSuggestions(true);
+            }}
+            onFocus={() => setShowSuggestions(true)}
             placeholder="Search local... (e.g. 'Cozy cafes nearby')"
             className="w-full bg-transparent text-white px-4 py-3 outline-none placeholder:text-zinc-600 font-mono text-sm"
         />
@@ -81,6 +124,26 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching }) =
             GO
         </button>
       </div>
+
+      {/* Intelligent Suggestions Dropdown */}
+      {showSuggestions && filteredSuggestions.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-950/95 backdrop-blur-md border border-zinc-800 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-100 overflow-hidden">
+          <div className="px-3 py-2 text-[10px] font-mono text-zinc-500 bg-zinc-900/50 uppercase tracking-widest border-b border-zinc-800">
+             SUGGESTED QUERIES
+          </div>
+          {filteredSuggestions.map((suggestion, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleSuggestionClick(suggestion)}
+              className="w-full text-left px-4 py-3 text-sm font-mono text-zinc-300 hover:bg-zinc-800 hover:text-primary transition-colors border-b border-zinc-800/50 last:border-0 flex items-center gap-3"
+            >
+               <span className="text-zinc-600 text-xs">›</span>
+               {suggestion}
+            </button>
+          ))}
+        </div>
+      )}
     </form>
   );
 };

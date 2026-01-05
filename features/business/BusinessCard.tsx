@@ -27,9 +27,16 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
       `}
     >
       <div className="flex justify-between items-start mb-1">
-        <h3 className={`font-sans font-bold text-base leading-tight pr-8 ${isSelected ? 'text-white' : 'text-zinc-200'}`}>
-          {business.name}
-        </h3>
+        <div className="flex items-center gap-2 pr-8">
+            <h3 className={`font-sans font-bold text-base leading-tight ${isSelected ? 'text-white' : 'text-zinc-200'}`}>
+            {business.name}
+            </h3>
+            {business.verified && (
+                <span className="shrink-0 text-blue-400" title="Verified Business">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                </span>
+            )}
+        </div>
         {business.rating && (
           <span className="shrink-0 font-mono text-[10px] text-black bg-primary px-1.5 py-0.5 rounded-sm font-bold">
             {business.rating.toFixed(1)}

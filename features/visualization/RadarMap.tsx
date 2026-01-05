@@ -6,9 +6,10 @@ interface RadarMapProps {
   businesses: Business[];
   onSelect: (id: string) => void;
   selectedId: string | null;
+  onRescan?: () => void;
 }
 
-const RadarMap: React.FC<RadarMapProps> = ({ userLocation, businesses, onSelect, selectedId }) => {
+const RadarMap: React.FC<RadarMapProps> = ({ userLocation, businesses, onSelect, selectedId, onRescan }) => {
   const size = 600; // SVG canvas size
   const center = size / 2;
   const range = 0.03; // ~3km approx degrees delta
@@ -22,10 +23,7 @@ const RadarMap: React.FC<RadarMapProps> = ({ userLocation, businesses, onSelect,
       
       // Scale to canvas
       const x = center + dx * (size / 2);
-      const y = center + dy * (size / 2); // Latitude increases upwards, SVG y increases downwards, need flip?
-      // Normally lat increases North (up), y increases down. 
-      // dy > 0 means user is North of business. Business should be below center.
-      // If user=10, biz=9. dy=1/range. y = center + positive. Correct.
+      const y = center + dy * (size / 2); 
 
       return { ...b, cx: x, cy: y };
     }).filter(Boolean) as (Business & { cx: number; cy: number })[];
@@ -40,7 +38,7 @@ const RadarMap: React.FC<RadarMapProps> = ({ userLocation, businesses, onSelect,
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-background select-none">
+    <div className="relative h-full w-full overflow-hidden bg-background select-none group">
        {/* Background Grid */}
       <svg className="absolute inset-0 h-full w-full opacity-20 pointer-events-none" viewBox={`0 0 ${size} ${size}`}>
          <defs>
@@ -104,6 +102,17 @@ const RadarMap: React.FC<RadarMapProps> = ({ userLocation, businesses, onSelect,
       <div className="absolute bottom-4 left-4 font-mono text-xs text-zinc-500">
          RADAR_VIEW // SCANNING AREA
       </div>
+
+      {/* Rescan Button */}
+      {onRescan && (
+        <button 
+            onClick={onRescan}
+            className="absolute top-4 right-4 bg-zinc-900/80 backdrop-blur border border-zinc-700 hover:border-primary text-zinc-300 hover:text-white px-3 py-1.5 rounded text-[10px] font-mono tracking-widest transition-all duration-300 hover:shadow-[0_0_10px_rgba(59,130,246,0.5)] flex items-center gap-2"
+        >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            RE-SCAN SECTOR
+        </button>
+      )}
     </div>
   );
 };

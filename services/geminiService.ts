@@ -159,7 +159,9 @@ export const searchLocalBusinesses = async (
 
     const businesses: Business[] = structuredData.map((item, idx) => {
         const isBookable = ["restaurant", "bar", "cafe", "spa"].some(t => item.type?.toLowerCase().includes(t)) || Math.random() > 0.5;
-        
+        // Mock Verification status
+        const isVerified = Math.random() > 0.7; 
+
         return {
             id: `gen-biz-${idx}-${Date.now()}`,
             name: item.name,
@@ -176,6 +178,7 @@ export const searchLocalBusinesses = async (
             vibe: item.vibe,
             bestFor: item.bestFor,
             openNow: item.openNow,
+            verified: isVerified,
             phoneNumber: "(555) 123-4567",
             hours: "09:00 AM - 10:00 PM",
             bookingAvailable: isBookable,
@@ -199,6 +202,35 @@ export const searchLocalBusinesses = async (
     console.error("Search Error:", error);
     throw error;
   }
+};
+
+// Ask a context-aware question about a business
+export const askBusinessQuestion = async (business: Business, question: string): Promise<string> => {
+    try {
+        const context = `
+            Business: ${business.name}
+            Type: ${business.types?.join(', ')}
+            Vibe: ${business.vibe}
+            Description: ${business.description}
+            Reviews: ${business.reviews?.map(r => r.text.text).join(' | ')}
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Context: ${context}
+            
+            User Question: "${question}"
+            
+            Task: Answer the user's question concisely (max 2 sentences) based on the business details. 
+            Tone: Helpful, local expert, slightly casual.
+            If the answer isn't explicitly in the data, infer it from the 'vibe' and 'type' but be honest about inferring.`
+        });
+
+        return response.text || "I couldn't find specific info on that, but it seems worth checking out!";
+    } catch (error) {
+        console.error("Question Error:", error);
+        return "I'm having trouble connecting to the concierge service right now.";
+    }
 };
 
 // Text-to-Speech for Business Descriptions with State Callbacks

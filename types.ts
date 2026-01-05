@@ -42,6 +42,7 @@ export interface Business {
   description?: string; // AI generated
   
   // New Enhanced Fields
+  verified?: boolean; // Premium feature
   vibe?: string; // e.g., "Cozy", "Industrial", "Romantic"
   bestFor?: string[]; // e.g., ["Date Night", "Remote Work"]
   openNow?: boolean;
@@ -80,4 +81,20 @@ export enum ViewMode {
 export interface AudioState {
   isPlaying: boolean;
   isLoading: boolean;
+}
+
+export interface ItineraryItem {
+  id: string;
+  timeOffset: string; // e.g. "6:00 PM"
+  title: string;
+  description: string; // Why this spot?
+  businessId?: string; // Link to actual business if available
+  business?: Business;
+  type: 'FOOD' | 'ACTIVITY' | 'DRINK' | 'OTHER';
+}
+
+export interface Itinerary {
+  title: string;
+  items: ItineraryItem[];
+  totalCostEstimate: string;
 }
