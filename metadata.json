@@ -1,0 +1,9 @@
+{
+  "name": "LocalSpot AI",
+  "description": "AI-powered local discovery engine with voice interaction and spatial visualization.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
