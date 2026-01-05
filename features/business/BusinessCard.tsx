@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Business } from '../../types';
 
@@ -8,6 +9,7 @@ interface BusinessCardProps {
   onSpeak: (text: string) => void;
   isFavorite: boolean;
   onToggleFavorite: (b: Business) => void;
+  onHover: (id: string | null) => void;
 }
 
 export const BusinessCard: React.FC<BusinessCardProps> = ({ 
@@ -16,11 +18,14 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
     isSelected, 
     onSpeak,
     isFavorite,
-    onToggleFavorite
+    onToggleFavorite,
+    onHover
 }) => {
   return (
     <div 
       onClick={onClick}
+      onMouseEnter={() => onHover(business.id)}
+      onMouseLeave={() => onHover(null)}
       className={`
         relative group p-4 border-b border-zinc-800 transition-all duration-300 cursor-pointer
         ${isSelected ? 'bg-zinc-900/80 border-l-2 border-l-primary' : 'hover:bg-zinc-900/40 border-l-2 border-l-transparent'}
@@ -28,7 +33,7 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
     >
       <div className="flex justify-between items-start mb-1">
         <div className="flex items-center gap-2 pr-8">
-            <h3 className={`font-sans font-bold text-base leading-tight ${isSelected ? 'text-white' : 'text-zinc-200'}`}>
+            <h3 className={`font-sans font-bold text-base leading-tight transition-colors ${isSelected ? 'text-white' : 'text-zinc-200 group-hover:text-white'}`}>
             {business.name}
             </h3>
             {business.verified && (
@@ -38,14 +43,14 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
             )}
         </div>
         {business.rating && (
-          <span className="shrink-0 font-mono text-[10px] text-black bg-primary px-1.5 py-0.5 rounded-sm font-bold">
+          <span className="shrink-0 font-mono text-[10px] text-black bg-primary px-1.5 py-0.5 rounded-sm font-bold shadow-[0_0_10px_rgba(249,115,22,0.4)]">
             {business.rating.toFixed(1)}
           </span>
         )}
       </div>
 
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-zinc-500 text-[10px] font-mono uppercase tracking-wider">
+        <span className="text-zinc-500 text-[10px] font-mono uppercase tracking-wider border border-zinc-800 px-1 rounded bg-zinc-950">
             {business.types?.[0] || 'Local'}
         </span>
         {business.priceLevel && (
@@ -54,12 +59,12 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
       </div>
 
       {business.description && (
-        <p className="text-zinc-400 text-sm leading-relaxed line-clamp-2 mb-3 font-light">
+        <p className="text-zinc-400 text-sm leading-relaxed line-clamp-2 mb-3 font-light group-hover:text-zinc-300 transition-colors">
           {business.description}
         </p>
       )}
 
-      <div className="flex gap-2 mt-2 items-center justify-between">
+      <div className="flex gap-2 mt-2 items-center justify-between opacity-60 group-hover:opacity-100 transition-opacity">
          <div className="flex gap-2">
             <button 
                 onClick={(e) => {

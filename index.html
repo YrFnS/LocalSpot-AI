@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" class="dark">
   <head>
@@ -25,12 +26,21 @@
             animation: {
               'radar-spin': 'spin 4s linear infinite',
               'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'scan-vertical': 'scanVertical 2s linear infinite',
             },
+            keyframes: {
+                scanVertical: {
+                    '0%': { transform: 'translateY(-100%)' },
+                    '100%': { transform: 'translateY(100%)' }
+                }
+            }
           },
         },
       };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <style>
       body {
         background-color: #09090b;
@@ -46,10 +56,61 @@
           scrollbar-width: none;
       }
       .glass-panel {
-        background: rgba(24, 24, 27, 0.7);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        background: rgba(9, 9, 11, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
+      .holographic-border {
+          position: relative;
+      }
+      .holographic-border::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0; height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.5), transparent);
+      }
+      .holographic-border::after {
+          content: '';
+          position: absolute;
+          bottom: 0; left: 0; right: 0; height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.5), transparent);
+      }
+      /* CRT Scanline effect for images */
+      .crt-overlay {
+          background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+          background-size: 100% 2px, 3px 100%;
+          pointer-events: none;
+      }
+      /* Leaflet Dark Mode Overrides */
+      .leaflet-container {
+          background: #09090b !important;
+          font-family: 'JetBrains Mono', monospace !important;
+      }
+      .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+          background: rgba(9, 9, 11, 0.9) !important;
+          backdrop-filter: blur(10px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          color: white !important;
+          border-radius: 4px !important;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+      }
+      .leaflet-popup-content {
+          margin: 8px 12px !important;
+      }
+      .leaflet-bar a {
+          background-color: #18181b !important;
+          border-bottom: 1px solid #27272a !important;
+          color: #a1a1aa !important;
+      }
+      .leaflet-bar a:hover {
+          background-color: #27272a !important;
+          color: #fff !important;
+      }
+      .custom-div-icon {
+          background: transparent;
+          border: none;
       }
     </style>
   <script type="importmap">

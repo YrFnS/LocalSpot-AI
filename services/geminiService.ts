@@ -1,8 +1,7 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { Business, Coordinates } from "../types";
 import { decodeBase64, decodeAudioData, getAudioContext } from "../utils/audioUtils";
-import { getPhotosForType } from "./imageService";
-import { calculateDistanceMeters } from "../utils/geoUtils";
+import { mapAiResponseToBusiness } from "../utils/mapper";
 
 // Initialize Gemini Client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -52,9 +51,9 @@ export const searchLocalBusinesses = async (
 ): Promise<{ text: string; businesses: Business[] }> => {
   
   try {
-    // CRITICAL FIX: Google Maps Grounding is only supported on Gemini 2.5 series.
-    // Do not use Gemini 3 for the search step involving the googleMaps tool.
-    const model = 'gemini-2.5-flash';
+    // CRITICAL: Google Maps Grounding is only supported on Gemini 2.5 series.
+    const groundModel = 'gemini-2.5-flash';
+    const structureModel = 'gemini-3-flash-preview';
     
     const retrievalConfig = userLocation
       ? { latLng: { latitude: userLocation.latitude, longitude: userLocation.longitude } }
@@ -66,7 +65,7 @@ export const searchLocalBusinesses = async (
 
     // STEP 1: Grounded Search (Real Data)
     const groundResponse = await ai.models.generateContent({
-      model,
+      model: groundModel,
       contents: `Find 6-8 distinct businesses for "${query}" near ${userLocation ? `${userLocation.latitude},${userLocation.longitude}` : 'me'}. 
       Include address, rating, review count, and open status.`,
       config: {
@@ -79,9 +78,8 @@ export const searchLocalBusinesses = async (
     const rawText = groundResponse.text || "";
 
     // STEP 2: Structure Data & AI Inference
-    // We can use Gemini 3 Flash here for better formatting as it doesn't require tools
     const structuredResponse = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: structureModel,
         contents: `
         SOURCE TEXT:
         ${rawText}
@@ -126,40 +124,10 @@ export const searchLocalBusinesses = async (
         return { text: rawText, businesses: [] };
     }
 
-    const businesses: Business[] = structuredData.map((item, idx) => {
-        // Fallback location jitter if AI fails to extract exact coords
-        const lat = item.latitude || (userLocation?.latitude || 0) + (Math.random() * 0.01 - 0.005);
-        const lng = item.longitude || (userLocation?.longitude || 0) + (Math.random() * 0.01 - 0.005);
-        const bizLocation = { latitude: lat, longitude: lng };
-
-        return {
-            id: `biz-${idx}-${Date.now()}`,
-            name: item.name,
-            description: item.description,
-            types: [item.type],
-            priceLevel: item.price || "$$",
-            address: item.address || "Local",
-            location: bizLocation,
-            distanceMeters: userLocation ? calculateDistanceMeters(userLocation, bizLocation) : 0,
-            rating: item.rating || 4.5,
-            ratingCount: item.ratingCount || 100,
-            vibe: item.vibe || "Local",
-            bestFor: item.bestFor || [],
-            openNow: item.openNow !== undefined ? item.openNow : true, 
-            verified: Math.random() > 0.8,
-            phoneNumber: "(555) Local-01",
-            hours: "10:00 AM - 10:00 PM",
-            bookingAvailable: item.slots && item.slots.length > 0,
-            slots: item.slots,
-            photos: getPhotosForType(item.type || 'default'), 
-            reviews: item.reviews?.map((r: any) => ({
-                authorAttribution: { displayName: r.user || 'Local Guide', photoUri: '' },
-                text: { text: r.text, languageCode: 'en' },
-                rating: r.rating || 5,
-                relativePublishTimeDescription: 'Recently'
-            }))
-        };
-    });
+    // Map AI response to Domain Objects using isolated mapper
+    const businesses: Business[] = structuredData.map((item, idx) => 
+        mapAiResponseToBusiness(item, idx, userLocation)
+    );
 
     return {
       text: rawText,

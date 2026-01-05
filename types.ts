@@ -1,3 +1,4 @@
+
 export interface Coordinates {
   latitude: number;
   longitude: number;
@@ -77,6 +78,12 @@ export enum ViewMode {
   LIST = 'LIST',
   RADAR = 'RADAR',
   GRID = 'GRID',
+  MAP = 'MAP',
+}
+
+export enum Tab {
+  SEARCH = 'SEARCH',
+  FAVORITES = 'FAVORITES',
 }
 
 export interface AudioState {

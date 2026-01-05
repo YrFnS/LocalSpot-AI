@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Business, BookingSlot } from '../../types';
 import { BookingWidget } from './BookingWidget';
@@ -46,82 +47,93 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
       <div 
         className="
-          relative w-full max-w-4xl h-full md:h-auto md:max-h-[90vh] 
-          bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden flex flex-col md:flex-row rounded-lg
+          relative w-full max-w-5xl h-full md:h-[85vh] 
+          glass-panel holographic-border overflow-hidden flex flex-col md:flex-row rounded-none md:rounded-lg
+          shadow-[0_0_50px_rgba(0,0,0,0.8)]
         "
         onClick={(e) => e.stopPropagation()}
       >
-         {/* Close Button Mobile */}
-         <button 
-            onClick={onClose}
-            className="absolute top-4 right-4 z-10 p-2 bg-black/50 rounded-full text-white md:hidden backdrop-blur-md"
-         >
-             ✕
-         </button>
+         {/* Decorative Corner Markers */}
+         <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-primary/50 pointer-events-none z-20"></div>
+         <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-primary/50 pointer-events-none z-20"></div>
+         <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-primary/50 pointer-events-none z-20"></div>
+         <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary/50 pointer-events-none z-20"></div>
 
          {/* Left Column: Visuals & Core Info */}
-         <div className="w-full md:w-2/5 bg-zinc-900 border-b md:border-b-0 md:border-r border-zinc-800 p-6 flex flex-col overflow-y-auto">
-            <div className="mb-6">
-                <div className="flex items-center gap-2 mb-2">
+         <div className="w-full md:w-[400px] bg-zinc-950/50 border-b md:border-b-0 md:border-r border-white/5 flex flex-col overflow-y-auto relative scrollbar-hide">
+            <div className="p-6 pb-4">
+                <div className="flex items-center justify-between mb-4">
+                     <div className="flex items-center gap-2">
+                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                         <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">LIVE DATA FEED</span>
+                     </div>
+                     {/* Close Button Mobile */}
+                     <button onClick={onClose} className="md:hidden text-zinc-400 p-2">✕</button>
+                </div>
+                
+                <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tighter leading-none mb-4">{business.name}</h2>
+                
+                <div className="flex flex-wrap gap-2 mb-6">
                     {business.types?.map(t => (
-                        <span key={t} className="text-[10px] font-mono uppercase bg-zinc-800 text-zinc-400 px-2 py-1 rounded">
+                        <span key={t} className="text-[9px] font-mono uppercase bg-white/5 border border-white/10 text-zinc-300 px-2 py-1 tracking-wider">
                             {t}
                         </span>
                     ))}
                     {business.openNow !== undefined && (
-                        <span className={`text-[10px] font-mono uppercase px-2 py-1 rounded ${business.openNow ? 'bg-green-900/20 text-green-500' : 'bg-red-900/20 text-red-500'}`}>
+                        <span className={`text-[9px] font-mono uppercase px-2 py-1 border ${business.openNow ? 'border-green-900/50 text-green-500 bg-green-900/10' : 'border-red-900/50 text-red-500 bg-red-900/10'}`}>
                             {business.openNow ? 'OPEN' : 'CLOSED'}
                         </span>
                     )}
                 </div>
-                <h2 className="text-3xl font-bold text-white tracking-tight leading-none mb-2">{business.name}</h2>
-                <div className="flex items-center gap-3 text-sm font-mono text-zinc-400">
-                    <span className="text-primary font-bold">★ {business.rating?.toFixed(1)}</span>
-                    <span>•</span>
-                    <span>{business.priceLevel || 'Price N/A'}</span>
-                    <span>•</span>
-                    <span>{business.distanceMeters ? `${(business.distanceMeters/1000).toFixed(1)}km` : 'Nearby'}</span>
-                </div>
-            </div>
 
-            {/* AI Insight Card */}
-            <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 rounded border border-zinc-700/50 mb-6">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="text-[10px] font-mono text-accent uppercase tracking-widest">AI ANALYSIS</span>
-                    <button onClick={() => onSpeak(business.description || '')} className="text-zinc-400 hover:text-white">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                    </button>
-                </div>
-                <p className="text-sm text-zinc-300 leading-relaxed font-light italic">
-                    "{business.description}"
-                </p>
-                {business.vibe && (
-                    <div className="mt-3 pt-3 border-t border-white/5">
-                        <span className="text-xs text-zinc-500 font-mono">VIBE: </span>
-                        <span className="text-xs text-zinc-200">{business.vibe}</span>
+                <div className="grid grid-cols-3 gap-2 py-4 border-t border-b border-white/5 mb-6">
+                    <div className="text-center">
+                        <div className="text-[10px] text-zinc-500 font-mono uppercase mb-1">RATING</div>
+                        <div className="text-xl font-bold text-primary">{business.rating?.toFixed(1)}</div>
                     </div>
-                )}
+                    <div className="text-center border-l border-white/5">
+                        <div className="text-[10px] text-zinc-500 font-mono uppercase mb-1">COST</div>
+                        <div className="text-xl font-bold text-zinc-300">{business.priceLevel || '-'}</div>
+                    </div>
+                    <div className="text-center border-l border-white/5">
+                        <div className="text-[10px] text-zinc-500 font-mono uppercase mb-1">DIST</div>
+                        <div className="text-xl font-bold text-zinc-300">{business.distanceMeters ? `${(business.distanceMeters/1000).toFixed(1)}km` : '-'}</div>
+                    </div>
+                </div>
+
+                {/* AI Insight Card */}
+                <div className="relative group cursor-default">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-purple-600/20 rounded opacity-75 blur transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                    <div className="relative p-4 bg-black rounded border border-white/10">
+                         <div className="flex justify-between items-start mb-2">
+                             <span className="text-[9px] font-mono text-primary uppercase tracking-[0.2em]">INTELLIGENCE</span>
+                             <button onClick={() => onSpeak(business.description || '')} className="text-zinc-500 hover:text-white transition-colors">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                             </button>
+                         </div>
+                         <p className="text-sm text-zinc-300 leading-relaxed font-light">
+                            "{business.description}"
+                         </p>
+                    </div>
+                </div>
             </div>
 
-            {/* AI Concierge Component */}
-            <BusinessConcierge business={business} />
-
-            <div className="mt-auto flex flex-col gap-3">
+            <div className="mt-auto p-6 bg-black/20 space-y-3">
                 <div className="flex gap-2">
                     <a 
                         href={business.googleMapsUri || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.name)}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="flex-1 py-3 bg-white text-black text-center font-bold text-xs font-mono hover:bg-zinc-200 transition-colors"
+                        className="flex-1 py-3 bg-white hover:bg-zinc-200 text-black text-center font-bold text-[10px] font-mono uppercase tracking-widest transition-colors"
                     >
-                        GET DIRECTIONS
+                        INITIATE NAVIGATION
                     </a>
                     <button
                         onClick={() => onToggleFavorite(business)}
-                        className={`px-4 border ${isFavorite ? 'border-red-500 text-red-500' : 'border-zinc-700 text-zinc-400 hover:border-white'}`}
+                        className={`px-4 border ${isFavorite ? 'border-red-500 bg-red-500/10 text-red-500' : 'border-zinc-700 text-zinc-400 hover:border-white'}`}
                         title="Toggle Favorite"
                     >
                         ♥
@@ -130,86 +142,80 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                 
                 <button
                     onClick={handleShare}
-                    className="w-full py-2 border border-zinc-800 text-zinc-400 text-xs font-mono hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-2 border border-zinc-800 text-zinc-500 text-[10px] font-mono uppercase tracking-widest hover:text-white hover:border-zinc-600 transition-colors"
                 >
-                    {copied ? (
-                        <span className="text-green-500">LINK COPIED TO CLIPBOARD</span>
-                    ) : (
-                        <>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-                            SHARE LOCATION
-                        </>
-                    )}
+                    {copied ? 'COORDINATES COPIED' : 'TRANSMIT COORDINATES'}
                 </button>
             </div>
          </div>
 
          {/* Right Column: Details & Reviews */}
-         <div className="flex-1 p-6 overflow-y-auto bg-background/50 relative">
-             <button 
-                onClick={onClose}
-                className="absolute top-6 right-6 text-zinc-500 hover:text-white hidden md:block"
-             >
-                 <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-             </button>
-             
-             {/* Component: Photo Gallery */}
-             <PhotoGallery photos={business.photos} businessName={business.name} />
-
-             {/* Booking Widget (Already Extracted) */}
-             {business.bookingAvailable && business.slots && (
-                 <div className="mb-8">
-                     <BookingWidget slots={business.slots} onBook={handleBook} />
-                 </div>
-             )}
-
-             {/* Component: User Annotations */}
-             {isFavorite && (
-                <UserAnnotations 
-                    businessId={business.id}
-                    userNote={userNote}
-                    userTags={userTags}
-                    onUpdateNote={onUpdateNote}
-                    onAddTag={onAddTag}
-                    onRemoveTag={onRemoveTag}
-                />
-             )}
-
-             <div className="mb-8">
-                 <h3 className="text-sm font-mono text-zinc-500 uppercase tracking-widest mb-4">Best For</h3>
-                 <div className="flex flex-wrap gap-2">
-                    {business.bestFor?.map(tag => (
-                        <span key={tag} className="px-3 py-1 border border-zinc-700 rounded-full text-xs text-zinc-300">
-                            {tag}
-                        </span>
-                    )) || <span className="text-zinc-600 text-xs italic">General Interest</span>}
-                 </div>
+         <div className="flex-1 relative bg-black/40 flex flex-col">
+             {/* Header Actions */}
+             <div className="absolute top-0 right-0 p-6 z-30 hidden md:block">
+                 <button 
+                    onClick={onClose}
+                    className="w-8 h-8 flex items-center justify-center border border-zinc-700 text-zinc-500 hover:text-white hover:border-white rounded-full transition-all"
+                 >
+                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 12M2 2l10 10"/></svg>
+                 </button>
              </div>
 
-             <div className="mb-8">
-                <h3 className="text-sm font-mono text-zinc-500 uppercase tracking-widest mb-4">Details</h3>
-                <div className="space-y-3 text-sm text-zinc-300">
-                    <div className="flex gap-4">
-                        <span className="w-20 text-zinc-600">Address</span>
-                        <span>{business.address || "Address unavailable"}</span>
-                    </div>
-                    {business.hours && (
-                        <div className="flex gap-4">
-                            <span className="w-20 text-zinc-600">Hours</span>
-                            <span>{business.hours}</span>
-                        </div>
-                    )}
-                    {business.phoneNumber && (
-                        <div className="flex gap-4">
-                            <span className="w-20 text-zinc-600">Phone</span>
-                            <span>{business.phoneNumber}</span>
-                        </div>
-                    )}
-                </div>
-             </div>
+             <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar space-y-8">
+                 {/* Gallery with CRT effect */}
+                 <div className="relative">
+                    <PhotoGallery photos={business.photos} businessName={business.name} />
+                    <div className="absolute inset-0 crt-overlay pointer-events-none opacity-30"></div>
+                 </div>
+                 
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                     <div className="space-y-8">
+                         {/* Details */}
+                         <div>
+                            <h3 className="text-[10px] font-mono text-zinc-600 uppercase tracking-[0.2em] mb-4 border-b border-zinc-800 pb-2">LOCATION DATA</h3>
+                            <div className="space-y-3 text-sm font-mono text-zinc-400">
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-zinc-600 text-[10px] uppercase">ADDRESS</span>
+                                    <span>{business.address || "Unknown Sector"}</span>
+                                </div>
+                                {business.hours && (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-zinc-600 text-[10px] uppercase">OPERATING WINDOW</span>
+                                        <span>{business.hours}</span>
+                                    </div>
+                                )}
+                            </div>
+                         </div>
+                         
+                         {/* Annotations */}
+                         {isFavorite && (
+                            <UserAnnotations 
+                                businessId={business.id}
+                                userNote={userNote}
+                                userTags={userTags}
+                                onUpdateNote={onUpdateNote}
+                                onAddTag={onAddTag}
+                                onRemoveTag={onRemoveTag}
+                            />
+                         )}
+                     </div>
 
-             {/* Component: Review List */}
-             <ReviewList reviews={business.reviews} />
+                     <div className="space-y-8">
+                         {/* Booking */}
+                         {business.bookingAvailable && business.slots && (
+                             <BookingWidget slots={business.slots} onBook={handleBook} />
+                         )}
+
+                         {/* Concierge */}
+                         <BusinessConcierge business={business} />
+                     </div>
+                 </div>
+
+                 {/* Reviews */}
+                 <div className="pt-8 border-t border-zinc-800/50">
+                    <ReviewList reviews={business.reviews} />
+                 </div>
+             </div>
          </div>
       </div>
     </div>
