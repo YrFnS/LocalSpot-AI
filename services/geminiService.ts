@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Modality } from "@google/genai";
 import { Business, Coordinates } from "../types";
 import { decodeBase64, decodeAudioData, getAudioContext } from "../utils/audioUtils";
@@ -13,7 +14,8 @@ export const getFeaturedBusinesses = async (
         "trending spots right now", 
         userLocation
     );
-    return businesses.slice(0, 5); 
+    // Increased from 5 to 15 to show more initial content
+    return businesses.slice(0, 15); 
 };
 
 export const getAiSuggestions = async (userLocation: Coordinates | null): Promise<string[]> => {
@@ -64,14 +66,15 @@ export const searchLocalBusinesses = async (
     });
 
     // STEP 1: Grounded Search (Real Data)
+    // Increased request count to 20 to fill the map
     const groundResponse = await ai.models.generateContent({
       model: groundModel,
-      contents: `Find 6-8 distinct businesses for "${query}" near ${userLocation ? `${userLocation.latitude},${userLocation.longitude}` : 'me'}. 
+      contents: `Find at least 20 distinct businesses for "${query}" near ${userLocation ? `${userLocation.latitude},${userLocation.longitude}` : 'me'}. 
       Include address, rating, review count, and open status.`,
       config: {
         tools: [{ googleMaps: {} }],
         toolConfig: retrievalConfig ? { retrievalConfig } : undefined, 
-        systemInstruction: `Current Time: ${timeContext}. Find REAL places.`,
+        systemInstruction: `Current Time: ${timeContext}. Find REAL places. Prioritize density and variety.`,
       },
     });
 

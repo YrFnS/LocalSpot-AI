@@ -83,6 +83,7 @@ const App: React.FC = () => {
                 selectedId={state.selectedBusinessId} 
                 hoveredId={hoveredBusinessId}
                 setHoveredId={setHoveredBusinessId}
+                onRescan={handlers.handleRescan}
               />
           );
       }
@@ -236,6 +237,18 @@ const App: React.FC = () => {
         {/* Main Content Area */}
         <div className="flex-1 relative bg-transparent overflow-hidden">
             {renderMainContent()}
+            
+            {/* Global Scanning Overlay */}
+            {state.isSearching && viewMode !== ViewMode.GRID && (
+                <div className="absolute inset-0 pointer-events-none z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                    <div className="relative">
+                        <div className="w-64 h-64 border-2 border-primary/30 rounded-full animate-[spin_3s_linear_infinite] border-t-primary"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                             <div className="text-xs font-mono text-primary animate-pulse tracking-widest bg-black px-2">SCANNING</div>
+                        </div>
+                    </div>
+                </div>
+            )}
             
             <button onClick={toggleOracle} className="absolute bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary hover:bg-orange-500 text-black shadow-lg shadow-primary/30 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 group" title="Ask The Oracle">
                 <div className="absolute inset-0 rounded-full border-2 border-white/20 animate-[ping_3s_ease-in-out_infinite] pointer-events-none"></div>

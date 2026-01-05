@@ -12,6 +12,7 @@ interface RealMapProps {
   selectedId: string | null;
   hoveredId: string | null;
   setHoveredId: (id: string | null) => void;
+  onRescan?: () => void;
 }
 
 export const RealMap: React.FC<RealMapProps> = ({
@@ -20,18 +21,21 @@ export const RealMap: React.FC<RealMapProps> = ({
   onSelect,
   selectedId,
   hoveredId,
-  setHoveredId
+  setHoveredId,
+  onRescan
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<{ [key: string]: any }>({});
   const userMarkerRef = useRef<any>(null);
+  const isFirstLoad = useRef(true);
 
   // Initialize Map
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    const defaultCenter = [37.7749, -122.4194];
+    // Default to SF if no user location yet, will fly to user later
+    const defaultCenter = userLocation ? [userLocation.latitude, userLocation.longitude] : [37.7749, -122.4194];
     const initialZoom = 13;
 
     const map = L.map(mapRef.current, {
@@ -61,7 +65,7 @@ export const RealMap: React.FC<RealMapProps> = ({
     };
   }, []);
 
-  // Sync User Location
+  // Sync User Location Marker
   useEffect(() => {
     if (!mapInstanceRef.current || !userLocation) return;
     const map = mapInstanceRef.current;
@@ -72,7 +76,7 @@ export const RealMap: React.FC<RealMapProps> = ({
           html: `
             <div class="relative flex items-center justify-center w-4 h-4">
               <span class="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-primary shadow-[0_0_10px_rgba(249,115,22,0.8)]"></span>
             </div>
           `,
           iconSize: [16, 16],
@@ -85,17 +89,19 @@ export const RealMap: React.FC<RealMapProps> = ({
     } else {
         userMarkerRef.current = L.marker([userLocation.latitude, userLocation.longitude], {
             icon: createPulseIcon(),
-            interactive: false
+            interactive: false,
+            zIndexOffset: 1000
         }).addTo(map);
         
-        // Only pan to user if no businesses selected
-        if (!selectedId && businesses.length === 0) {
+        // Initial fly to user if just loaded
+        if (isFirstLoad.current && businesses.length === 0) {
             map.flyTo([userLocation.latitude, userLocation.longitude], 14, { duration: 1.5 });
+            isFirstLoad.current = false;
         }
     }
   }, [userLocation]);
 
-  // Sync Markers
+  // Sync Business Markers
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
@@ -108,42 +114,37 @@ export const RealMap: React.FC<RealMapProps> = ({
        }
     });
 
-    const bounds = L.latLngBounds([]);
-    if (userLocation) bounds.extend([userLocation.latitude, userLocation.longitude]);
-
     businesses.forEach(b => {
         if (!b.location) return;
-
-        bounds.extend([b.location.latitude, b.location.longitude]);
 
         const isSelected = selectedId === b.id;
         const isHovered = hoveredId === b.id;
         
         const createIcon = (selected: boolean, hovered: boolean) => {
-            const size = selected ? 32 : (hovered ? 24 : 12);
-            // Dynamic color/size based on state
-            let html = '';
+            const size = selected ? 40 : (hovered ? 30 : 16);
             
+            let html = '';
             if (selected) {
                 html = `
-                  <div class="relative flex items-center justify-center w-full h-full">
-                    <div class="absolute inset-0 border border-white rounded-full animate-[spin_3s_linear_infinite]"></div>
-                    <div class="w-3 h-3 bg-white rounded-full"></div>
+                  <div class="relative flex items-center justify-center w-full h-full transition-all duration-300">
+                    <div class="absolute inset-0 border-2 border-primary rounded-full animate-[spin_4s_linear_infinite] opacity-50"></div>
+                    <div class="absolute inset-1 border border-white rounded-full animate-[spin_3s_linear_infinite_reverse]"></div>
+                    <div class="w-3 h-3 bg-white rounded-full shadow-[0_0_15px_white]"></div>
                   </div>
                 `;
             } else if (hovered) {
                 html = `
-                  <div class="relative flex items-center justify-center w-full h-full">
-                     <div class="absolute inset-0 bg-white/20 rounded-full animate-pulse"></div>
-                     <div class="w-2 h-2 bg-white rounded-full border border-zinc-900"></div>
-                     <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-black px-2 py-0.5 rounded text-[8px] text-white font-mono whitespace-nowrap border border-zinc-700 pointer-events-none">
-                        ${b.name.substring(0, 15)}
+                  <div class="relative flex items-center justify-center w-full h-full transition-all duration-300">
+                     <div class="absolute inset-0 bg-primary/20 rounded-full animate-pulse"></div>
+                     <div class="w-2.5 h-2.5 bg-primary rounded-full border border-black shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
+                     <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/90 px-3 py-1 rounded text-[10px] text-white font-mono whitespace-nowrap border border-zinc-700 pointer-events-none z-50 shadow-xl">
+                        ${b.name}
                      </div>
                   </div>
                 `;
             } else {
                 html = `
-                  <div class="w-full h-full bg-zinc-600 rounded-full border border-black hover:bg-zinc-400 transition-colors"></div>
+                  <div class="w-full h-full bg-zinc-800 rounded-full border border-zinc-500 hover:bg-zinc-600 transition-all shadow-lg"></div>
                 `;
             }
 
@@ -159,7 +160,7 @@ export const RealMap: React.FC<RealMapProps> = ({
             // Update existing marker icon state
             const marker = markersRef.current[b.id];
             marker.setIcon(createIcon(isSelected, isHovered));
-            marker.setZIndexOffset(isSelected ? 1000 : (isHovered ? 500 : 0));
+            marker.setZIndexOffset(isSelected ? 2000 : (isHovered ? 1500 : 100));
         } else {
             // Create new
             const marker = L.marker([b.location.latitude, b.location.longitude], {
@@ -180,18 +181,31 @@ export const RealMap: React.FC<RealMapProps> = ({
         }
     });
 
-    // Fit bounds if businesses change significantly or first load
-    // We avoid refitting on every small state change to keep map stable
-    if (businesses.length > 0 && !selectedId) {
-        // Simple debounce or check if bounds changed significantly could be added here
-        // For now, only fit if we haven't manually moved much, or just rely on user navigation
-        // Let's only fit on initial search results load
-        // map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-    }
+  }, [businesses, selectedId, hoveredId, onSelect, setHoveredId]);
 
-  }, [businesses, selectedId, hoveredId]);
+  // Fit Bounds Logic
+  useEffect(() => {
+      if (!mapInstanceRef.current || businesses.length === 0) return;
+      if (selectedId) return;
 
-  // Fly to selected
+      const map = mapInstanceRef.current;
+      const bounds = L.latLngBounds([]);
+      
+      if (userLocation) {
+          bounds.extend([userLocation.latitude, userLocation.longitude]);
+      }
+      
+      businesses.forEach(b => {
+          if (b.location) bounds.extend([b.location.latitude, b.location.longitude]);
+      });
+
+      if (bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [80, 80], maxZoom: 16, animate: true });
+      }
+
+  }, [businesses, userLocation, selectedId]);
+
+  // Fly to selected business
   useEffect(() => {
       if (!selectedId || !mapInstanceRef.current) return;
       const b = businesses.find(bz => bz.id === selectedId);
@@ -202,6 +216,12 @@ export const RealMap: React.FC<RealMapProps> = ({
           });
       }
   }, [selectedId, businesses]);
+
+  const handleRecenter = () => {
+      if (userLocation && mapInstanceRef.current) {
+           mapInstanceRef.current.flyTo([userLocation.latitude, userLocation.longitude], 15, { duration: 1 });
+      }
+  };
 
   return (
     <div className="relative h-full w-full bg-[#09090b]">
@@ -216,12 +236,35 @@ export const RealMap: React.FC<RealMapProps> = ({
         </div>
         
         {/* Corner HUD */}
-        <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-1 pointer-events-none">
-            <div className="text-[10px] font-mono text-zinc-500 bg-black/80 px-2 py-1 rounded border border-zinc-800">
+        <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-2 pointer-events-none">
+            <div className="text-[10px] font-mono text-zinc-500 bg-black/80 px-2 py-1 rounded border border-zinc-800 backdrop-blur-md">
                 SATELLITE UPLINK: ACTIVE
             </div>
-            <div className="text-[10px] font-mono text-primary bg-black/80 px-2 py-1 rounded border border-zinc-800">
-                LAT: {userLocation?.latitude.toFixed(4)} // LNG: {userLocation?.longitude.toFixed(4)}
+            {userLocation && (
+                <div className="text-[10px] font-mono text-primary bg-black/80 px-2 py-1 rounded border border-zinc-800 backdrop-blur-md">
+                    LAT: {userLocation.latitude.toFixed(4)} <span className="text-zinc-600">|</span> LNG: {userLocation.longitude.toFixed(4)}
+                </div>
+            )}
+            
+            <div className="flex gap-2 pointer-events-auto">
+                {onRescan && (
+                    <button 
+                        onClick={onRescan}
+                        className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700 hover:border-primary p-2 rounded transition-all shadow-lg group flex items-center gap-2"
+                        title="Re-Scan Sector"
+                    >
+                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:animate-spin"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                         <span className="text-[10px] font-mono hidden md:inline">SCAN</span>
+                    </button>
+                )}
+                
+                <button 
+                    onClick={handleRecenter}
+                    className="bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-700 hover:border-white p-2 rounded transition-all shadow-lg group"
+                    title="Recenter Map"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="8" x2="12" y2="2"></line><line x1="12" y1="16" x2="12" y2="22"></line><line x1="8" y1="12" x2="2" y2="12"></line><line x1="16" y1="12" x2="22" y2="12"></line></svg>
+                </button>
             </div>
         </div>
     </div>
