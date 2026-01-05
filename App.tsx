@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { SearchBar } from './features/search/SearchBar';
 import { FilterBar } from './features/search/FilterBar';
 import RadarMap from './features/visualization/RadarMap';
+import { BusinessGrid } from './features/visualization/BusinessGrid';
 import { BusinessCard } from './features/business/BusinessCard';
 import { BusinessDetailModal } from './features/business/BusinessDetailModal';
 import { CategorySelector } from './features/discovery/CategorySelector';
@@ -127,6 +128,11 @@ const App: React.FC = () => {
 
   const handleSelectBusiness = (id: string) => {
     setState(s => ({ ...s, selectedBusinessId: id }));
+    // In GRID mode, allow selection to highlight, but maybe we want to open modal?
+    // Let's open modal for GRID mode clicks as it feels more app-like
+    if (viewMode === ViewMode.GRID) {
+        setShowDetailModal(true);
+    }
   };
   
   const handleOpenDetail = (id: string) => {
@@ -185,8 +191,17 @@ const App: React.FC = () => {
                     CURATE
                 </button>
                 <div className="h-6 w-[1px] bg-zinc-800 mx-2"></div>
-                <button onClick={() => setViewMode(ViewMode.LIST)} className={`p-2 font-mono text-[10px] tracking-wider transition-colors ${viewMode === ViewMode.LIST ? 'text-primary' : 'text-zinc-500 hover:text-zinc-300'}`}>LIST</button>
-                <button onClick={() => setViewMode(ViewMode.RADAR)} className={`p-2 font-mono text-[10px] tracking-wider transition-colors ${viewMode === ViewMode.RADAR ? 'text-primary' : 'text-zinc-500 hover:text-zinc-300'}`}>RADAR</button>
+                <div className="flex bg-zinc-900 rounded p-1 gap-1">
+                    <button onClick={() => setViewMode(ViewMode.LIST)} className={`p-1.5 rounded font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.LIST ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`} title="List View">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    </button>
+                    <button onClick={() => setViewMode(ViewMode.RADAR)} className={`p-1.5 rounded font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.RADAR ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`} title="Radar View">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                    </button>
+                    <button onClick={() => setViewMode(ViewMode.GRID)} className={`p-1.5 rounded font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.GRID ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`} title="Grid View">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    </button>
+                </div>
             </div>
          </div>
          <CategorySelector onSelect={handleSearch} disabled={state.isSearching} />
@@ -194,7 +209,14 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 flex relative overflow-hidden z-10">
-        <div className={`absolute inset-0 z-20 bg-background/95 md:bg-background/80 backdrop-blur md:static md:w-[420px] md:border-r md:border-zinc-800 flex flex-col transition-transform duration-300 ${viewMode === ViewMode.RADAR ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}`}>
+        {/* Sidebar: List View */}
+        <div 
+            className={`
+                absolute inset-0 z-20 bg-background/95 md:bg-background/80 backdrop-blur md:static md:w-[420px] md:border-r md:border-zinc-800 flex flex-col transition-transform duration-300 
+                ${(viewMode === ViewMode.RADAR || viewMode === ViewMode.GRID) ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
+                ${viewMode === ViewMode.GRID ? 'md:hidden' : ''} 
+            `}
+        >
            <div className="grid grid-cols-2 border-b border-zinc-900 bg-zinc-950/50">
                <button onClick={() => setActiveTab(Tab.SEARCH)} className={`py-3 text-xs font-mono tracking-widest transition-colors ${activeTab === Tab.SEARCH ? 'text-white border-b-2 border-primary bg-zinc-900/50' : 'text-zinc-500 hover:bg-zinc-900/30'}`}>DISCOVERY ({activeTab === Tab.SEARCH ? displayedList.length : state.results.length})</button>
                <button onClick={() => setActiveTab(Tab.FAVORITES)} className={`py-3 text-xs font-mono tracking-widest transition-colors ${activeTab === Tab.FAVORITES ? 'text-white border-b-2 border-primary bg-zinc-900/50' : 'text-zinc-500 hover:bg-zinc-900/30'}`}>SAVED ({favorites.length})</button>
@@ -211,15 +233,28 @@ const App: React.FC = () => {
               {displayedList.map(biz => (
                   <BusinessCard key={biz.id} business={biz} isSelected={state.selectedBusinessId === biz.id} isFavorite={isFavorite(biz.id)} onToggleFavorite={toggleFavorite} onClick={() => handleSelectBusiness(biz.id)} onSpeak={handleSpeak} />
               ))}
+              {displayedList.length === 0 && (
+                  <div className="p-8 text-center text-zinc-600 text-xs font-mono">
+                      {activeTab === Tab.SEARCH ? "START A SEARCH TO DETECT SIGNALS" : "NO FAVORITES SAVED"}
+                  </div>
+              )}
            </div>
         </div>
 
+        {/* Main Content Area: Radar or Grid */}
         <div className="flex-1 relative bg-transparent overflow-hidden">
-            <RadarMap userLocation={state.userLocation} businesses={displayedList} selectedId={state.selectedBusinessId} onSelect={handleSelectBusiness} onRescan={handleRescan} />
+            {viewMode === ViewMode.GRID ? (
+                 <BusinessGrid businesses={displayedList} onSelect={handleSelectBusiness} selectedId={state.selectedBusinessId} />
+            ) : (
+                <RadarMap userLocation={state.userLocation} businesses={displayedList} selectedId={state.selectedBusinessId} onSelect={handleSelectBusiness} onRescan={handleRescan} />
+            )}
+            
             <button onClick={toggleOracle} className="absolute bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary hover:bg-orange-500 text-black shadow-lg shadow-primary/30 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 group" title="Ask The Oracle">
                 <div className="absolute inset-0 rounded-full border-2 border-white/20 animate-[ping_3s_ease-in-out_infinite] pointer-events-none"></div>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:animate-pulse"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
             </button>
+            
+            {/* Popover Card for Radar View Only */}
             {state.selectedBusinessId && viewMode === ViewMode.RADAR && getSelectedBusiness() && !showDetailModal && (
                 <div onClick={() => handleOpenDetail(state.selectedBusinessId!)} className="absolute bottom-6 left-4 right-4 md:left-auto md:right-24 md:w-80 glass-panel rounded-lg p-5 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 cursor-pointer hover:bg-zinc-900/80 transition-colors group">
                     <div className="flex justify-between items-start mb-2"><h2 className="font-bold text-white text-xl tracking-tight group-hover:text-primary transition-colors line-clamp-1">{getSelectedBusiness()?.name}</h2></div>

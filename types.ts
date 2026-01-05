@@ -76,6 +76,7 @@ export interface FilterState {
 export enum ViewMode {
   LIST = 'LIST',
   RADAR = 'RADAR',
+  GRID = 'GRID',
 }
 
 export interface AudioState {
