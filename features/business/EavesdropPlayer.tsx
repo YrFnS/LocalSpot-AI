@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Business } from '../../types';
-import { generateConversationAudio } from '../../services/geminiService';
+import { generateConversationAudio } from '../../services/audioGenService';
 import { getAudioContext, decodeAudioData } from '../../utils/audioUtils';
 
 interface EavesdropPlayerProps {

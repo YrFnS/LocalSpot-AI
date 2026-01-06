@@ -1,7 +1,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Business, SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, ComparisonResult, VibeState } from '../types';
-import { searchLocalBusinesses, getFeaturedBusinesses, speakDescription, getAiSuggestions, analyzeImageAndSearch, compareBusinesses, generateVibeQuery } from '../services/geminiService';
+import { searchLocalBusinesses, getFeaturedBusinesses } from '../services/searchService';
+import { getAiSuggestions, analyzeImageAndSearch, compareBusinesses, generateVibeQuery } from '../services/insightService';
+import { speakDescription } from '../services/audioGenService';
 import { getRandomWeather } from '../services/weatherService';
 import { useGeolocation } from './useGeolocation';
 import { useFavorites } from './useFavorites';

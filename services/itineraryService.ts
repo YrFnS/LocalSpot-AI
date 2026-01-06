@@ -1,7 +1,6 @@
-import { GoogleGenAI } from "@google/genai";
-import { Business, Itinerary, ItineraryItem } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { Business, Itinerary, ItineraryItem } from "../types";
+import { ai } from "./aiClient";
 
 export const generateItinerary = async (
   prompt: string,

@@ -1,6 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Business } from '../../types';
-import { askBusinessQuestion } from '../../services/geminiService';
+import { askBusinessQuestion } from '../../services/insightService';
 
 interface BusinessConciergeProps {
     business: Business;
