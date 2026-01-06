@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Business, Coordinates } from '../../types';
 
 // Declare Leaflet global
@@ -12,7 +12,7 @@ interface RealMapProps {
   selectedId: string | null;
   hoveredId: string | null;
   setHoveredId: (id: string | null) => void;
-  onRescan?: () => void;
+  onRescan?: (customLocation?: Coordinates) => void;
 }
 
 export const RealMap: React.FC<RealMapProps> = ({
@@ -29,12 +29,12 @@ export const RealMap: React.FC<RealMapProps> = ({
   const markersRef = useRef<{ [key: string]: any }>({});
   const userMarkerRef = useRef<any>(null);
   const isFirstLoad = useRef(true);
+  const [mapCenter, setMapCenter] = useState<Coordinates | null>(null);
 
   // Initialize Map
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Default to SF if no user location yet, will fly to user later
     const defaultCenter = userLocation ? [userLocation.latitude, userLocation.longitude] : [37.7749, -122.4194];
     const initialZoom = 13;
 
@@ -46,7 +46,6 @@ export const RealMap: React.FC<RealMapProps> = ({
       renderer: L.canvas()
     });
 
-    // CartoDB Dark Matter Tiles (Free, Dark Mode)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 20,
       subdomains: 'abcd',
@@ -54,8 +53,10 @@ export const RealMap: React.FC<RealMapProps> = ({
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Attribution
-    L.control.attribution({ position: 'bottomleft', prefix: false }).addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>').addTo(map);
+    map.on('moveend', () => {
+      const center = map.getCenter();
+      setMapCenter({ latitude: center.lat, longitude: center.lng });
+    });
 
     mapInstanceRef.current = map;
 
@@ -93,7 +94,6 @@ export const RealMap: React.FC<RealMapProps> = ({
             zIndexOffset: 1000
         }).addTo(map);
         
-        // Initial fly to user if just loaded
         if (isFirstLoad.current && businesses.length === 0) {
             map.flyTo([userLocation.latitude, userLocation.longitude], 14, { duration: 1.5 });
             isFirstLoad.current = false;
@@ -106,7 +106,6 @@ export const RealMap: React.FC<RealMapProps> = ({
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
 
-    // Remove old markers that are not in current list
     Object.keys(markersRef.current).forEach(id => {
        if (!businesses.find(b => b.id === id)) {
            markersRef.current[id].remove();
@@ -137,14 +136,16 @@ export const RealMap: React.FC<RealMapProps> = ({
                   <div class="relative flex items-center justify-center w-full h-full transition-all duration-300">
                      <div class="absolute inset-0 bg-primary/20 rounded-full animate-pulse"></div>
                      <div class="w-2.5 h-2.5 bg-primary rounded-full border border-black shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
-                     <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/90 px-3 py-1 rounded text-[10px] text-white font-mono whitespace-nowrap border border-zinc-700 pointer-events-none z-50 shadow-xl">
-                        ${b.name}
+                     <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/95 px-3 py-1.5 rounded-sm text-[10px] text-white font-mono whitespace-nowrap border border-primary/30 z-[3000] shadow-[0_5px_15px_rgba(0,0,0,0.5)]">
+                        <span class="text-primary mr-2">⟫</span>${b.name}
                      </div>
                   </div>
                 `;
             } else {
                 html = `
-                  <div class="w-full h-full bg-zinc-800 rounded-full border border-zinc-500 hover:bg-zinc-600 transition-all shadow-lg"></div>
+                  <div class="w-full h-full bg-zinc-800 rounded-full border border-zinc-600 hover:bg-zinc-700 hover:border-primary/50 transition-all shadow-lg flex items-center justify-center">
+                    <div class="w-1 h-1 bg-zinc-400 rounded-full"></div>
+                  </div>
                 `;
             }
 
@@ -157,25 +158,17 @@ export const RealMap: React.FC<RealMapProps> = ({
         };
 
         if (markersRef.current[b.id]) {
-            // Update existing marker icon state
             const marker = markersRef.current[b.id];
             marker.setIcon(createIcon(isSelected, isHovered));
             marker.setZIndexOffset(isSelected ? 2000 : (isHovered ? 1500 : 100));
         } else {
-            // Create new
             const marker = L.marker([b.location.latitude, b.location.longitude], {
                 icon: createIcon(isSelected, isHovered)
             }).addTo(map);
 
-            marker.on('click', () => {
-                onSelect(b.id);
-            });
-            marker.on('mouseover', () => {
-                setHoveredId(b.id);
-            });
-            marker.on('mouseout', () => {
-                setHoveredId(null);
-            });
+            marker.on('click', () => onSelect(b.id));
+            marker.on('mouseover', () => setHoveredId(b.id));
+            marker.on('mouseout', () => setHoveredId(null));
 
             markersRef.current[b.id] = marker;
         }
@@ -223,10 +216,23 @@ export const RealMap: React.FC<RealMapProps> = ({
       }
   };
 
+  const handleSearchThisArea = () => {
+      if (onRescan && mapCenter) {
+          onRescan(mapCenter);
+      }
+  };
+
   return (
     <div className="relative h-full w-full bg-[#09090b]">
         <div ref={mapRef} className="h-full w-full z-10 outline-none" />
         
+        {/* Tactical Crosshair */}
+        <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center opacity-10">
+            <div className="w-16 h-[1px] bg-white"></div>
+            <div className="h-16 w-[1px] bg-white absolute"></div>
+            <div className="w-20 h-20 border border-white rounded-full absolute"></div>
+        </div>
+
         {/* Tactical Overlay Grid */}
         <div className="absolute inset-0 pointer-events-none z-20 opacity-20" 
              style={{ 
@@ -235,21 +241,34 @@ export const RealMap: React.FC<RealMapProps> = ({
              }}>
         </div>
         
+        {/* Floating Actions */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[200%] z-30 transition-opacity">
+            <button 
+                onClick={handleSearchThisArea}
+                className="bg-black/80 backdrop-blur-md border border-primary/40 hover:border-primary text-primary px-4 py-2 rounded-full font-mono text-[10px] tracking-widest shadow-2xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+            >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                SEARCH THIS AREA
+            </button>
+        </div>
+
         {/* Corner HUD */}
         <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-2 pointer-events-none">
             <div className="text-[10px] font-mono text-zinc-500 bg-black/80 px-2 py-1 rounded border border-zinc-800 backdrop-blur-md">
                 SATELLITE UPLINK: ACTIVE
             </div>
             {userLocation && (
-                <div className="text-[10px] font-mono text-primary bg-black/80 px-2 py-1 rounded border border-zinc-800 backdrop-blur-md">
-                    LAT: {userLocation.latitude.toFixed(4)} <span className="text-zinc-600">|</span> LNG: {userLocation.longitude.toFixed(4)}
+                <div className="text-[10px] font-mono text-primary bg-black/80 px-2 py-1 rounded border border-zinc-800 backdrop-blur-md flex gap-2">
+                    <span>LAT: {userLocation.latitude.toFixed(4)}</span>
+                    <span className="text-zinc-700">|</span>
+                    <span>LNG: {userLocation.longitude.toFixed(4)}</span>
                 </div>
             )}
             
             <div className="flex gap-2 pointer-events-auto">
                 {onRescan && (
                     <button 
-                        onClick={onRescan}
+                        onClick={() => onRescan()}
                         className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700 hover:border-primary p-2 rounded transition-all shadow-lg group flex items-center gap-2"
                         title="Re-Scan Sector"
                     >
@@ -266,6 +285,12 @@ export const RealMap: React.FC<RealMapProps> = ({
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="8" x2="12" y2="2"></line><line x1="12" y1="16" x2="12" y2="22"></line><line x1="8" y1="12" x2="2" y2="12"></line><line x1="16" y1="12" x2="22" y2="12"></line></svg>
                 </button>
             </div>
+        </div>
+        
+        {/* Scale indicator */}
+        <div className="absolute bottom-4 right-20 z-30 font-mono text-[9px] text-zinc-600 flex items-center gap-2">
+            <div className="w-12 h-[1px] bg-zinc-700"></div>
+            <span>RENDER MODE: GEOSPATIAL_DARK</span>
         </div>
     </div>
   );

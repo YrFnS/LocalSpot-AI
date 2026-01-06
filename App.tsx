@@ -16,12 +16,14 @@ import { VisionModal } from './features/search/VisionModal';
 import { CompareTray } from './features/comparison/CompareTray';
 import { ComparisonModal } from './features/comparison/ComparisonModal';
 import { VibeSynthesizer } from './features/search/VibeSynthesizer';
+import { SignalBoot } from './features/visualization/SignalBoot';
 import { useLiveSession } from './hooks/useLiveSession';
 import { useAppController } from './hooks/useAppController';
 import { Tab, ViewMode } from './types';
 
 const App: React.FC = () => {
   const {
+    isBooting,
     state,
     activeTab,
     setActiveTab,
@@ -81,7 +83,6 @@ const App: React.FC = () => {
 
   const selectedBusiness = handlers.getSelectedBusiness();
 
-  // Helper to render the main content based on view mode
   const renderMainContent = () => {
       if (viewMode === ViewMode.GRID) {
           return (
@@ -119,7 +120,6 @@ const App: React.FC = () => {
       );
   };
 
-  // Format location string based on user coordinates with correct cardinal directions
   const formatCoord = (val: number, type: 'lat' | 'lng') => {
     const abs = Math.abs(val).toFixed(3);
     if (type === 'lat') return val >= 0 ? `${abs}°N` : `${abs}°S`;
@@ -129,6 +129,8 @@ const App: React.FC = () => {
   const locationLabel = state.userLocation 
       ? `${formatCoord(state.userLocation.latitude, 'lat')} / ${formatCoord(state.userLocation.longitude, 'lng')}`
       : "ACQUIRING SIGNAL...";
+
+  if (isBooting) return <SignalBoot />;
 
   return (
     <div className="flex flex-col h-screen w-full bg-background text-zinc-100 overflow-hidden font-sans relative">
@@ -183,7 +185,6 @@ const App: React.FC = () => {
             </div>
             
             <div className="flex-1 max-w-2xl flex items-stretch h-10 gap-2">
-                 {/* Environmental HUD */}
                  <div className="hidden lg:block h-full">
                      <ContextHud weather={weather} onWeatherToggle={handlers.handleWeatherToggle} locationName={locationLabel} />
                  </div>
@@ -233,7 +234,6 @@ const App: React.FC = () => {
          <CategorySelector onSelect={handlers.handleSearch} disabled={state.isSearching} />
          {(state.results.length > 0 || activeTab === Tab.FAVORITES) && <FilterBar filters={filters} onChange={setFilters} />}
          
-         {/* AI Vision Result Banner */}
          {aiAnalysisResult && (
              <div className="bg-primary/10 border-b border-primary/20 p-2 flex items-center justify-center gap-2 animate-in slide-in-from-top-2">
                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
@@ -246,7 +246,6 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 flex relative overflow-hidden z-10">
-        {/* Sidebar: List View */}
         <div 
             className={`
                 absolute inset-0 z-20 bg-background/95 md:bg-background/80 backdrop-blur md:static md:w-[420px] md:border-r md:border-zinc-800 flex flex-col transition-transform duration-300 
@@ -259,7 +258,6 @@ const App: React.FC = () => {
                <button onClick={() => setActiveTab(Tab.FAVORITES)} className={`py-3 text-xs font-mono tracking-widest transition-colors ${activeTab === Tab.FAVORITES ? 'text-white border-b-2 border-primary bg-zinc-900/50' : 'text-zinc-500 hover:bg-zinc-900/30'}`}>SAVED ({favorites.length})</button>
            </div>
            
-           {/* Tags */}
            {activeTab === Tab.FAVORITES && uniqueTags.length > 0 && (
                <div className="flex gap-2 overflow-x-auto p-2 bg-zinc-900/50 border-b border-zinc-800 scrollbar-hide">
                    <button onClick={() => setSelectedTag(null)} className={`px-3 py-1 rounded text-[10px] font-mono whitespace-nowrap border ${!selectedTag ? 'bg-primary text-black border-primary' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>ALL</button>
@@ -269,20 +267,18 @@ const App: React.FC = () => {
                </div>
            )}
 
-           {/* Error Banner */}
            {state.error && (
              <div className="p-4 bg-red-900/20 border-b border-red-900/50 flex items-start gap-3">
                <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                <div>
                  <p className="text-xs text-red-200 font-bold mb-1">SIGNAL INTERRUPTION</p>
                  <p className="text-[10px] text-red-300/70 font-mono">{state.error}</p>
-                 <button onClick={handlers.handleRescan} className="mt-2 text-[10px] text-red-400 hover:text-white underline decoration-dotted">RETRY SCAN</button>
+                 <button onClick={() => handlers.handleRescan()} className="mt-2 text-[10px] text-red-400 hover:text-white underline decoration-dotted">RETRY SCAN</button>
                </div>
              </div>
            )}
 
            <div className="flex-1 overflow-y-auto scrollbar-hide pb-20">
-              {/* Loading State */}
               {state.isSearching && (
                  <div className="p-4 space-y-4">
                     {[1,2,3,4].map(i => (
@@ -301,7 +297,6 @@ const App: React.FC = () => {
                  </div>
               )}
 
-              {/* List Content */}
               {!state.isSearching && displayedList.map(biz => (
                   <BusinessCard 
                     key={biz.id} 
@@ -328,11 +323,9 @@ const App: React.FC = () => {
            </div>
         </div>
 
-        {/* Main Content Area */}
         <div className="flex-1 relative bg-transparent overflow-hidden">
             {renderMainContent()}
             
-            {/* Global Scanning Overlay */}
             {state.isSearching && viewMode !== ViewMode.GRID && (
                 <div className="absolute inset-0 pointer-events-none z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
                     <div className="relative">
@@ -349,7 +342,6 @@ const App: React.FC = () => {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:animate-pulse"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
             </button>
             
-            {/* Popover Card for Radar/Map View Only */}
             {state.selectedBusinessId && (viewMode === ViewMode.RADAR || viewMode === ViewMode.MAP) && selectedBusiness && !showDetailModal && (
                 <div onClick={() => handlers.handleOpenDetail(state.selectedBusinessId!)} className="absolute bottom-6 left-4 right-4 md:left-auto md:right-24 md:w-80 glass-panel rounded-lg p-5 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 cursor-pointer hover:bg-zinc-900/80 transition-colors group">
                     <div className="flex justify-between items-start mb-2"><h2 className="font-bold text-white text-xl tracking-tight group-hover:text-primary transition-colors line-clamp-1">{selectedBusiness.name}</h2></div>
@@ -360,7 +352,6 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Detail Modal - Moved outside main to ensure it overlays header via stacking context */}
       {showDetailModal && selectedBusiness && (
         <BusinessDetailModal 
             business={selectedBusiness} 

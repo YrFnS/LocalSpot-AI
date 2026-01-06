@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, VibeState } from '../types';
+import { SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, VibeState, Coordinates } from '../types';
 import { searchLocalBusinesses, getFeaturedBusinesses } from '../services/searchService';
 import { getAiSuggestions, analyzeImageAndSearch, generateVibeQuery } from '../services/insightService';
 import { speakDescription } from '../services/audioGenService';
@@ -12,6 +12,7 @@ import { getThemeForQuery, THEMES } from '../utils/themeUtils';
 import { filterBusinesses } from '../utils/filterUtils';
 
 export const useAppController = () => {
+    const [isBooting, setIsBooting] = useState(true);
     const [state, setState] = useState<SearchState>({
         query: '',
         results: [],
@@ -65,6 +66,12 @@ export const useAppController = () => {
         sortBy: SortOption.RELEVANCE
     });
 
+    // Boot Sequence Simulation
+    useEffect(() => {
+        const timer = setTimeout(() => setIsBooting(false), 3000);
+        return () => clearTimeout(timer);
+    }, []);
+
     // Initial Data Fetch
     useEffect(() => {
         if (userLocation) {
@@ -85,7 +92,7 @@ export const useAppController = () => {
         }
     }, [userLocation, weather.condition]);
 
-    const handleSearch = useCallback(async (query: string) => {
+    const handleSearch = useCallback(async (query: string, customLocation?: Coordinates) => {
         setActiveTab(Tab.SEARCH);
         setState(s => ({ ...s, isSearching: true, query, error: null, selectedBusinessId: null }));
         setShowDetailModal(false);
@@ -93,7 +100,8 @@ export const useAppController = () => {
         setAiAnalysisResult(null); 
         
         try {
-            const { businesses } = await searchLocalBusinesses(query, state.userLocation, weather);
+            const searchLocation = customLocation || state.userLocation;
+            const { businesses } = await searchLocalBusinesses(query, searchLocation, weather);
             setState(s => ({ ...s, results: businesses, isSearching: false }));
         } catch (error) {
             setState(s => ({ ...s, isSearching: false, error: 'Connection failed.' }));
@@ -146,8 +154,8 @@ export const useAppController = () => {
         setShowDetailModal(true);
     };
 
-    const handleRescan = useCallback(() => {
-        handleSearch(state.query || "hidden gems and cool spots");
+    const handleRescan = useCallback((customLocation?: Coordinates) => {
+        handleSearch(state.query || "hidden gems and cool spots", customLocation);
     }, [state.query, handleSearch]);
 
     const handleWeatherToggle = (condition: WeatherCondition) => {
@@ -174,6 +182,7 @@ export const useAppController = () => {
     };
 
     return {
+        isBooting,
         state,
         activeTab,
         setActiveTab,
