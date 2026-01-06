@@ -78,34 +78,6 @@ const RadarMap: React.FC<RadarMapProps> = ({
       return match?.types?.[0] || null;
   }, [hoveredId, businesses]);
 
-  // Generate connection lines for the active cluster
-  const clusterLines = useMemo(() => {
-      // Priority: Hovered > Selected
-      const targetId = hoveredId || selectedId;
-      if (!targetId) return [];
-
-      const targetBiz = businesses.find(b => b.id === targetId);
-      if (!targetBiz || !targetBiz.types?.[0]) return [];
-      
-      const targetType = targetBiz.types[0];
-      const typePoints = points.filter(p => p.types?.[0] === targetType);
-      
-      // If we have less than 2 points, no lines needed
-      if (typePoints.length < 2) return [];
-
-      const origin = typePoints.find(p => p.id === targetId);
-      if (!origin) return [];
-
-      // Draw lines from origin to all other points of same type
-      return typePoints.filter(p => p.id !== origin.id).map(p => ({
-          x1: origin.cx,
-          y1: origin.cy,
-          x2: p.cx,
-          y2: p.cy,
-          id: p.id
-      }));
-  }, [points, hoveredId, selectedId, businesses]);
-
   if (!userLocation) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-background text-zinc-500 font-mono text-sm animate-pulse">
@@ -131,17 +103,17 @@ const RadarMap: React.FC<RadarMapProps> = ({
           <svg className="absolute inset-0 h-full w-full opacity-30 pointer-events-none" viewBox={`0 0 ${size} ${size}`}>
              <defs>
                 <radialGradient id="radarGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
+                    <stop offset="0%" stopColor="#f97316" stopOpacity="0.1" />
                     <stop offset="100%" stopColor="#09090b" stopOpacity="0" />
                 </radialGradient>
                 <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(59, 130, 246, 0.1)" strokeWidth="0.5"/>
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.5"/>
                 </pattern>
              </defs>
              <rect width={size} height={size} fill="url(#radarGradient)" />
              <rect width={size} height={size} fill="url(#grid)" />
              
-             {/* Concentric Rings */}
+             {/* Concentric Rings with Tactical Dashes */}
              {[0.15, 0.3, 0.45, 0.6, 0.75].map((r, i) => (
                  <circle 
                     key={i} 
@@ -149,45 +121,34 @@ const RadarMap: React.FC<RadarMapProps> = ({
                     cy={center} 
                     r={size * r} 
                     fill="none" 
-                    stroke="#3b82f6" 
+                    stroke={i % 2 === 0 ? "#f97316" : "#3b82f6"} 
                     strokeWidth={0.5} 
-                    strokeOpacity={0.1 + (i * 0.05)}
-                    strokeDasharray={i % 2 === 0 ? "4 4" : "none"}
+                    strokeOpacity={0.2}
+                    strokeDasharray="10 5"
+                    className={i === 2 ? "animate-[spin_20s_linear_infinite]" : ""}
+                    style={{ transformOrigin: 'center' }}
                  />
              ))}
              
              {/* Crosshairs */}
-             <line x1={center} y1="0" x2={center} y2={size} stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
-             <line x1="0" y1={center} x2={size} y2={center} stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
+             <line x1={center} y1="0" x2={center} y2={size} stroke="#fff" strokeWidth="0.5" opacity="0.1" />
+             <line x1="0" y1={center} x2={size} y2={center} stroke="#fff" strokeWidth="0.5" opacity="0.1" />
           </svg>
 
-          {/* Scanning Effect */}
-          <div className="absolute inset-0 pointer-events-none animate-radar-spin origin-center opacity-40">
-             <div className="h-[50%] w-full top-0 bg-gradient-to-l from-transparent via-primary/5 to-transparent absolute" style={{ transformOrigin: 'bottom center', transform: 'rotate(-90deg)' }}></div>
-             <div className="absolute top-[50%] left-[50%] w-[50%] h-[1px] bg-gradient-to-r from-primary/50 to-transparent origin-left shadow-[0_0_15px_rgba(249,115,22,0.5)]"></div>
+          {/* Active Scanning Sweep */}
+          <div className="absolute inset-0 pointer-events-none animate-radar-spin origin-center opacity-60">
+             <div className="h-[50%] w-full top-0 bg-gradient-to-l from-transparent via-primary/10 to-transparent absolute" style={{ transformOrigin: 'bottom center', transform: 'rotate(-90deg)' }}></div>
+             <div className="absolute top-[50%] left-[50%] w-[50%] h-[2px] bg-gradient-to-r from-primary to-transparent origin-left shadow-[0_0_20px_rgba(249,115,22,0.8)]"></div>
           </div>
 
           {/* Interactive Data Layer */}
           <svg className="absolute inset-0 h-full w-full preserve-3d" viewBox={`0 0 ${size} ${size}`}>
-            {/* Semantic Cluster Lines */}
-            {clusterLines.map((line, i) => (
-                <line
-                    key={`line-${i}`}
-                    x1={line.x1}
-                    y1={line.y1}
-                    x2={line.x2}
-                    y2={line.y2}
-                    stroke="#f97316"
-                    strokeWidth="1.5"
-                    strokeOpacity="0.4"
-                    className="animate-pulse"
-                />
-            ))}
-
+            
             {/* User Location */}
             <g className="animate-pulse">
-                <circle cx={center} cy={center} r="4" fill="#f97316" />
-                <circle cx={center} cy={center} r="20" fill="none" stroke="#f97316" strokeWidth="0.5" opacity="0.5" />
+                <circle cx={center} cy={center} r="4" fill="#fff" />
+                <circle cx={center} cy={center} r="30" fill="none" stroke="#f97316" strokeWidth="1" opacity="0.5" />
+                <text x={center + 10} y={center + 4} fill="#f97316" fontSize="10" fontFamily="JetBrains Mono" opacity="0.7">YOU</text>
             </g>
 
             {/* Business Nodes */}
@@ -205,42 +166,51 @@ const RadarMap: React.FC<RadarMapProps> = ({
                     onMouseLeave={() => setHoveredId(null)}
                     className="cursor-pointer transition-all duration-300"
                     style={{ 
-                        opacity: isDimmed ? 0.3 : 1,
+                        opacity: isDimmed ? 0.2 : 1,
                         transformBox: 'fill-box', 
                         transformOrigin: 'center'
                     }}
                 >
-                    {/* Ripple Ring for Selected/Hovered */}
+                    {/* Targeting Reticle */}
                     {(isSelected || isHovered) && (
-                        <circle cx={p.cx} cy={p.cy} r="20" fill="none" stroke={isSelected ? "#fff" : "#f97316"} strokeWidth="0.5" className="animate-ping" opacity="0.5" />
+                        <g className="animate-[spin_4s_linear_infinite]" style={{ transformOrigin: `${p.cx}px ${p.cy}px` }}>
+                            <rect x={p.cx - 15} y={p.cy - 15} width="30" height="30" fill="none" stroke={isSelected ? "#fff" : "#f97316"} strokeWidth="1" strokeDasharray="10 20" />
+                        </g>
                     )}
                     
                     {/* Node Body */}
                     <circle 
                         cx={p.cx} 
                         cy={p.cy} 
-                        r={isSelected || isHovered ? 6 : 3} 
+                        r={isSelected ? 6 : (isHovered ? 5 : 3)} 
                         fill={isSelected ? '#ffffff' : (isRelated ? '#f97316' : '#3b82f6')} 
                         stroke="#000"
                         strokeWidth="1"
-                        className="transition-all duration-300 ease-out"
+                        className="transition-all duration-300"
                     />
 
-                    {/* Dynamic Label */}
+                    {/* Connecting Line to Center (only when hovered) */}
+                    {(isHovered || isSelected) && (
+                        <line 
+                            x1={center} y1={center} x2={p.cx} y2={p.cy} 
+                            stroke={isSelected ? "#fff" : "#f97316"} 
+                            strokeWidth="0.5" 
+                            strokeDasharray="4 4" 
+                            opacity="0.4" 
+                        />
+                    )}
+
+                    {/* Label */}
                     {(isSelected || isHovered) && (
                         <g>
-                            <rect x={p.cx + 10} y={p.cy - 12} width="110" height="24" fill="rgba(0,0,0,0.85)" rx="2" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-                            <text 
-                                x={p.cx + 15} 
-                                y={p.cy + 4} 
-                                fill="#fff" 
-                                fontSize="10"
-                                fontFamily="JetBrains Mono"
-                                fontWeight="bold"
-                            >
+                            <rect x={p.cx + 12} y={p.cy - 14} width="120" height="28" fill="rgba(0,0,0,0.9)" stroke={isSelected ? "#fff" : "#f97316"} strokeWidth="1" />
+                            <text x={p.cx + 18} y={p.cy} fill="#fff" fontSize="10" fontFamily="JetBrains Mono" fontWeight="bold">
                                 {p.name.length > 15 ? p.name.substring(0,14) + '..' : p.name}
                             </text>
-                             <line x1={p.cx} y1={p.cy} x2={p.cx+10} y2={p.cy} stroke="#fff" strokeWidth="1" />
+                            <text x={p.cx + 18} y={p.cy + 10} fill="#aaa" fontSize="8" fontFamily="JetBrains Mono">
+                                DIST: {p.distanceMeters ? (p.distanceMeters/1000).toFixed(1) : '?'}KM
+                            </text>
+                            <line x1={p.cx} y1={p.cy} x2={p.cx+12} y2={p.cy} stroke={isSelected ? "#fff" : "#f97316"} strokeWidth="1" />
                         </g>
                     )}
                 </g>
@@ -249,27 +219,28 @@ const RadarMap: React.FC<RadarMapProps> = ({
           </svg>
        </div>
       
-      {/* HUD Overlay Elements */}
-      <div className="absolute bottom-4 left-4 font-mono text-[10px] text-zinc-500 flex flex-col gap-1 pointer-events-none">
-         <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-            <span>LIVE MONITORING</span>
+      {/* HUD Elements */}
+      <div className="absolute bottom-4 left-4 font-mono text-[9px] text-zinc-500 flex flex-col gap-1 pointer-events-none">
+         <div className="flex items-center gap-2 text-primary">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            <span>SYSTEM ONLINE</span>
          </div>
-         <div className="text-zinc-600">
-             RANGE: {(dynamicRange * 111).toFixed(2)}KM
+         <div className="text-zinc-600 flex justify-between w-48 border-b border-zinc-800 pb-1">
+             <span>RANGE_MAX</span>
+             <span>{(dynamicRange * 111).toFixed(2)}KM</span>
          </div>
-         <div className="text-zinc-600">
-             TILT: {tilt.x.toFixed(1)}°X / {tilt.y.toFixed(1)}°Y
+         <div className="text-zinc-600 flex justify-between w-48">
+             <span>GYRO_STAB</span>
+             <span>{tilt.x.toFixed(1)} / {tilt.y.toFixed(1)}</span>
          </div>
       </div>
 
       {onRescan && (
         <button 
             onClick={onRescan}
-            className="absolute top-4 right-4 bg-zinc-900/90 backdrop-blur border border-zinc-700 hover:border-primary text-zinc-300 hover:text-white px-4 py-2 rounded-sm text-[10px] font-mono tracking-widest transition-all duration-300 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] flex items-center gap-2 z-10"
+            className="absolute top-4 right-4 bg-black/80 backdrop-blur border border-primary/50 text-primary hover:bg-primary/10 px-4 py-2 rounded-none text-[10px] font-mono tracking-widest transition-all duration-300 shadow-[0_0_15px_rgba(249,115,22,0.3)] z-10 clip-path-polygon"
         >
-            <span className="w-1.5 h-1.5 bg-primary rounded-none animate-spin"></span>
-            RE-SCAN SECTOR
+            [ RE-SCAN SECTOR ]
         </button>
       )}
     </div>
