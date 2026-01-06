@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Business, SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, ComparisonResult } from '../types';
-import { searchLocalBusinesses, getFeaturedBusinesses, speakDescription, getAiSuggestions, analyzeImageAndSearch, compareBusinesses } from '../services/geminiService';
+import { Business, SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, ComparisonResult, VibeState } from '../types';
+import { searchLocalBusinesses, getFeaturedBusinesses, speakDescription, getAiSuggestions, analyzeImageAndSearch, compareBusinesses, generateVibeQuery } from '../services/geminiService';
 import { getRandomWeather } from '../services/weatherService';
 import { useGeolocation } from './useGeolocation';
 import { useFavorites } from './useFavorites';
@@ -32,6 +32,11 @@ export const useAppController = () => {
     const [isCuratorOpen, setIsCuratorOpen] = useState(false);
     const [isVisionOpen, setIsVisionOpen] = useState(false); 
     const [isVisionAnalyzing, setIsVisionAnalyzing] = useState(false);
+    
+    // Vibe Synthesizer
+    const [isSynthesizerOpen, setIsSynthesizerOpen] = useState(false);
+    const [isSynthesizing, setIsSynthesizing] = useState(false);
+
     const [showDetailModal, setShowDetailModal] = useState(false);
 
     // Comparisons State
@@ -105,6 +110,19 @@ export const useAppController = () => {
             setIsVisionAnalyzing(false);
         }
     }, [state.userLocation, weather]);
+
+    const handleVibeSearch = async (vibes: VibeState) => {
+        setIsSynthesizing(true);
+        try {
+            const query = await generateVibeQuery(vibes);
+            setIsSynthesizerOpen(false);
+            await handleSearch(query);
+        } catch (e) {
+            setState(s => ({ ...s, error: 'Synthesizer Failed' }));
+        } finally {
+            setIsSynthesizing(false);
+        }
+    };
 
     const handleSpeak = (text: string) => {
         speakDescription(text, () => setIsAudioPlaying(true), () => setIsAudioPlaying(false));
@@ -192,6 +210,10 @@ export const useAppController = () => {
         setIsVisionOpen,
         isVisionAnalyzing,
         handleVisionAnalyze,
+        isSynthesizerOpen,
+        setIsSynthesizerOpen,
+        isSynthesizing,
+        handleVibeSearch,
         aiSuggestions,
         aiAnalysisResult,
         filters,

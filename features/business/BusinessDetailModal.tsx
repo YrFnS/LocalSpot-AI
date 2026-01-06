@@ -6,6 +6,7 @@ import { BusinessConcierge } from './BusinessConcierge';
 import { UserAnnotations } from './UserAnnotations';
 import { PhotoGallery } from './PhotoGallery';
 import { ReviewList } from './ReviewList';
+import { EavesdropPlayer } from './EavesdropPlayer';
 
 interface BusinessDetailModalProps {
   business: Business;
@@ -201,6 +202,9 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                      </div>
 
                      <div className="space-y-8">
+                         {/* Eavesdrop Player (NEW) */}
+                         <EavesdropPlayer business={business} />
+
                          {/* Booking */}
                          {business.bookingAvailable && business.slots && (
                              <BookingWidget slots={business.slots} onBook={handleBook} />

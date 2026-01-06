@@ -15,6 +15,7 @@ import { ContextHud } from './features/context/ContextHud';
 import { VisionModal } from './features/search/VisionModal';
 import { CompareTray } from './features/comparison/CompareTray';
 import { ComparisonModal } from './features/comparison/ComparisonModal';
+import { VibeSynthesizer } from './features/search/VibeSynthesizer';
 import { useLiveSession } from './hooks/useLiveSession';
 import { useAppController } from './hooks/useAppController';
 import { Tab, ViewMode } from './types';
@@ -36,6 +37,10 @@ const App: React.FC = () => {
     setIsVisionOpen,
     isVisionAnalyzing,
     handleVisionAnalyze,
+    isSynthesizerOpen,
+    setIsSynthesizerOpen,
+    isSynthesizing,
+    handleVibeSearch,
     aiSuggestions,
     aiAnalysisResult,
     filters,
@@ -135,6 +140,13 @@ const App: React.FC = () => {
          isAnalyzing={isVisionAnalyzing}
       />
 
+      <VibeSynthesizer 
+         isOpen={isSynthesizerOpen} 
+         onClose={() => setIsSynthesizerOpen(false)} 
+         onSynthesize={handleVibeSearch} 
+         isProcessing={isSynthesizing} 
+      />
+
       {comparisonList.length > 0 && (
           <CompareTray 
              items={comparisonList} 
@@ -177,6 +189,13 @@ const App: React.FC = () => {
 
             <div className="flex items-center gap-2 shrink-0">
                 <AudioVisualizer isPlaying={isAudioPlaying} />
+                <button 
+                    onClick={() => setIsSynthesizerOpen(true)}
+                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-700 text-xs font-mono text-cyan-400 hover:text-white hover:border-cyan-500 transition-colors"
+                >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v18"></path><path d="M6 8v8"></path><path d="M18 8v8"></path><path d="M2 12h20"></path></svg>
+                    SYNTH
+                </button>
                 <button 
                     onClick={() => setIsCuratorOpen(true)}
                     className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-700 text-xs font-mono text-purple-400 hover:text-white hover:border-purple-500 transition-colors"

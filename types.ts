@@ -135,3 +135,10 @@ export interface ComparisonResult {
     winnerReason: string;
     aspects: ComparisonAspect[];
 }
+
+export interface VibeState {
+    entropy: number;   // 0 (Order) - 100 (Chaos)
+    grit: number;      // 0 (Polished) - 100 (Raw)
+    epoch: number;     // 0 (Historic) - 100 (Future)
+    obscurity: number; // 0 (Popular) - 100 (Secret)
+}

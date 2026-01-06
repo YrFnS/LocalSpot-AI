@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Modality } from "@google/genai";
-import { Business, Coordinates, WeatherState, ComparisonResult } from "../types";
+import { Business, Coordinates, WeatherState, ComparisonResult, VibeState } from "../types";
 import { decodeBase64, decodeAudioData, getAudioContext } from "../utils/audioUtils";
 import { mapAiResponseToBusiness } from "../utils/mapper";
 import { getWeatherDescription } from "../services/weatherService";
@@ -91,6 +91,31 @@ export const analyzeImageAndSearch = async (
     }
 };
 
+export const generateVibeQuery = async (vibes: VibeState): Promise<string> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `
+                You are a Vibe Translator. Convert these abstract parameters into a specific, evocative search query for finding a physical place (restaurant, bar, park, shop, venue).
+
+                PARAMETERS:
+                Entropy: ${vibes.entropy}% (0=Serene/Minimalist, 100=Chaotic/High Energy/Loud)
+                Grit: ${vibes.grit}% (0=Polished/Luxury/Clean, 100=Raw/Industrial/Grunge)
+                Epoch: ${vibes.epoch}% (0=Historic/Vintage/Retro, 100=Futuristic/Modern/Neon)
+                Obscurity: ${vibes.obscurity}% (0=Mainstream/Famous, 100=Hidden/Secret/Local Only)
+
+                TASK:
+                Output JUST the search query string. Make it descriptive.
+                Example for High Grit, High Obscurity: "Grungy dive bars hidden in alleyways"
+                Example for Low Entropy, High Epoch: "Minimalist futuristic quiet cafes"
+            `
+        });
+        return response.text?.trim() || "cool places";
+    } catch (error) {
+        return "hidden gems";
+    }
+};
+
 export const compareBusinesses = async (b1: Business, b2: Business): Promise<ComparisonResult | null> => {
     try {
         const response = await ai.models.generateContent({
@@ -126,6 +151,52 @@ export const compareBusinesses = async (b1: Business, b2: Business): Promise<Com
         return JSON.parse(response.text || "null");
     } catch (error) {
         console.error("Comparison Error", error);
+        return null;
+    }
+};
+
+export const generateConversationAudio = async (business: Business): Promise<ArrayBuffer | null> => {
+    try {
+        const prompt = `
+            Generate a short, rapid-fire, natural conversation (approx 30-40 words total) between two friends, Alex and Jordan.
+            They are discussing whether to go to "${business.name}" which is a ${business.types?.[0]}.
+            
+            Context:
+            Vibe: ${business.vibe}
+            Description: ${business.description}
+            Rating: ${business.rating} stars.
+            
+            Tone: Casual, urban, slightly opinionated. Use slang.
+            
+            Script Format:
+            Alex: [Line]
+            Jordan: [Line]
+            Alex: [Line]
+        `;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-tts",
+            contents: [{ parts: [{ text: prompt }] }],
+            config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: {
+                    multiSpeakerVoiceConfig: {
+                        speakerVoiceConfigs: [
+                            { speaker: 'Alex', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
+                            { speaker: 'Jordan', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } }
+                        ]
+                    }
+                }
+            }
+        });
+
+        const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (!base64Audio) throw new Error("No audio generated");
+        
+        return decodeBase64(base64Audio).buffer;
+
+    } catch (error) {
+        console.error("Eavesdrop generation failed", error);
         return null;
     }
 };
