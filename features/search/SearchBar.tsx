@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useTypewriter } from '../../hooks/useTypewriter';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -10,51 +12,27 @@ interface SearchBarProps {
 
 export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, suggestions, onOpenVision }) => {
   const [query, setQuery] = useState('');
-  const [isListening, setIsListening] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [placeholder, setPlaceholder] = useState("Search local...");
-  const recognitionRef = useRef<any>(null);
   const wrapperRef = useRef<HTMLFormElement>(null);
 
-  // Typewriter Effect for Placeholder
-  useEffect(() => {
-    if (suggestions.length === 0) return;
-    
-    let currentIndex = 0;
-    let currentText = "";
-    let isDeleting = false;
-    let loopTimeout: ReturnType<typeof setTimeout>;
+  // Hook 1: Visual Effect
+  const { displayedText, isDeleting } = useTypewriter(
+    suggestions.length > 0 ? suggestions : ["Search local...", "Find coffee...", "Hidden gems..."],
+    100, 
+    50, 
+    2000
+  );
 
-    const type = () => {
-      const fullText = suggestions[currentIndex % suggestions.length];
-      
-      if (isDeleting) {
-        currentText = fullText.substring(0, currentText.length - 1);
-      } else {
-        currentText = fullText.substring(0, currentText.length + 1);
-      }
+  // Hook 2: Voice Logic
+  const { isListening, toggleListening, isSupported } = useSpeechRecognition((transcript) => {
+      setQuery(transcript);
+      onSearch(transcript);
+      setShowSuggestions(false);
+  });
 
-      setPlaceholder(`Try "${currentText}"${isDeleting ? '' : '|'}`);
+  const placeholder = `Try "${displayedText}"${isDeleting ? '' : '|'}`;
 
-      let typeSpeed = 100;
-      if (isDeleting) typeSpeed /= 2;
-
-      if (!isDeleting && currentText === fullText) {
-        typeSpeed = 2000; // Pause at end
-        isDeleting = true;
-      } else if (isDeleting && currentText === "") {
-        isDeleting = false;
-        currentIndex++;
-        typeSpeed = 500; // Pause before next word
-      }
-
-      loopTimeout = setTimeout(type, typeSpeed);
-    };
-
-    loopTimeout = setTimeout(type, 1000);
-    return () => clearTimeout(loopTimeout);
-  }, [suggestions]);
-
+  // Click Outside Handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -64,36 +42,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, sug
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = false;
-        recognitionRef.current.interimResults = false;
-        recognitionRef.current.lang = 'en-US';
-
-        recognitionRef.current.onresult = (event: any) => {
-            const transcript = event.results[0][0].transcript;
-            setQuery(transcript);
-            onSearch(transcript);
-            setIsListening(false);
-            setShowSuggestions(false);
-        };
-        
-        recognitionRef.current.onerror = () => setIsListening(false);
-        recognitionRef.current.onend = () => setIsListening(false);
-    }
-  }, [onSearch]);
-
-  const toggleVoice = () => {
-      if (isListening) {
-          recognitionRef.current?.stop();
-      } else {
-          setIsListening(true);
-          recognitionRef.current?.start();
-      }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,19 +95,21 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, sug
              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
         </button>
 
-        <button
-            type="button"
-            onClick={toggleVoice}
-            className={`p-3 transition-colors border-l border-zinc-800 hover:bg-zinc-900 ${isListening ? 'text-red-500 animate-pulse bg-red-500/10' : 'text-zinc-500 hover:text-white'}`}
-            title="Voice Search"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                <line x1="12" y1="19" x2="12" y2="23"></line>
-                <line x1="8" y1="23" x2="16" y2="23"></line>
-            </svg>
-        </button>
+        {isSupported && (
+            <button
+                type="button"
+                onClick={toggleListening}
+                className={`p-3 transition-colors border-l border-zinc-800 hover:bg-zinc-900 ${isListening ? 'text-red-500 animate-pulse bg-red-500/10' : 'text-zinc-500 hover:text-white'}`}
+                title="Voice Search"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+            </button>
+        )}
         
         <button
             type="submit"

@@ -48,23 +48,18 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
       <div 
         className="
           relative w-full max-w-5xl h-full md:h-[85vh] 
-          glass-panel holographic-border overflow-hidden flex flex-col md:flex-row rounded-none md:rounded-lg
-          shadow-[0_0_50px_rgba(0,0,0,0.8)]
+          bg-[#09090b] border border-zinc-800 
+          overflow-hidden flex flex-col md:flex-row rounded-none md:rounded-lg
+          shadow-2xl
         "
         onClick={(e) => e.stopPropagation()}
       >
-         {/* Decorative Corner Markers */}
-         <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-primary/50 pointer-events-none z-20"></div>
-         <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-primary/50 pointer-events-none z-20"></div>
-         <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-primary/50 pointer-events-none z-20"></div>
-         <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary/50 pointer-events-none z-20"></div>
-
          {/* Left Column: Visuals & Core Info */}
-         <div className="w-full md:w-[400px] bg-zinc-950/50 border-b md:border-b-0 md:border-r border-white/5 flex flex-col overflow-y-auto relative scrollbar-hide">
+         <div className="w-full md:w-[400px] bg-zinc-950 border-b md:border-b-0 md:border-r border-zinc-800 flex flex-col overflow-y-auto relative scrollbar-hide">
             <div className="p-6 pb-4">
                 <div className="flex items-center justify-between mb-4">
                      <div className="flex items-center gap-2">
@@ -79,7 +74,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                 
                 <div className="flex flex-wrap gap-2 mb-6">
                     {business.types?.map(t => (
-                        <span key={t} className="text-[9px] font-mono uppercase bg-white/5 border border-white/10 text-zinc-300 px-2 py-1 tracking-wider">
+                        <span key={t} className="text-[9px] font-mono uppercase bg-zinc-900 border border-zinc-800 text-zinc-300 px-2 py-1 tracking-wider">
                             {t}
                         </span>
                     ))}
@@ -90,16 +85,16 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                     )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 py-4 border-t border-b border-white/5 mb-6">
+                <div className="grid grid-cols-3 gap-2 py-4 border-t border-b border-zinc-800 mb-6">
                     <div className="text-center">
                         <div className="text-[10px] text-zinc-500 font-mono uppercase mb-1">RATING</div>
                         <div className="text-xl font-bold text-primary">{business.rating?.toFixed(1)}</div>
                     </div>
-                    <div className="text-center border-l border-white/5">
+                    <div className="text-center border-l border-zinc-800">
                         <div className="text-[10px] text-zinc-500 font-mono uppercase mb-1">COST</div>
                         <div className="text-xl font-bold text-zinc-300">{business.priceLevel || '-'}</div>
                     </div>
-                    <div className="text-center border-l border-white/5">
+                    <div className="text-center border-l border-zinc-800">
                         <div className="text-[10px] text-zinc-500 font-mono uppercase mb-1">DIST</div>
                         <div className="text-xl font-bold text-zinc-300">{business.distanceMeters ? `${(business.distanceMeters/1000).toFixed(1)}km` : '-'}</div>
                     </div>
@@ -108,7 +103,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                 {/* AI Insight Card */}
                 <div className="relative group cursor-default">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-purple-600/20 rounded opacity-75 blur transition duration-1000 group-hover:duration-200 animate-tilt"></div>
-                    <div className="relative p-4 bg-black rounded border border-white/10">
+                    <div className="relative p-4 bg-zinc-900 rounded border border-zinc-800">
                          <div className="flex justify-between items-start mb-2">
                              <span className="text-[9px] font-mono text-primary uppercase tracking-[0.2em]">INTELLIGENCE</span>
                              <button onClick={() => onSpeak(business.description || '')} className="text-zinc-500 hover:text-white transition-colors">
@@ -122,7 +117,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                 </div>
             </div>
 
-            <div className="mt-auto p-6 bg-black/20 space-y-3">
+            <div className="mt-auto p-6 bg-zinc-900/50 space-y-3 border-t border-zinc-800">
                 <div className="flex gap-2">
                     <a 
                         href={business.googleMapsUri || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.name)}`} 
@@ -151,22 +146,21 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
          </div>
 
          {/* Right Column: Details & Reviews */}
-         <div className="flex-1 relative bg-black/40 flex flex-col">
+         <div className="flex-1 relative bg-[#09090b] flex flex-col">
              {/* Header Actions */}
              <div className="absolute top-0 right-0 p-6 z-30 hidden md:block">
                  <button 
                     onClick={onClose}
-                    className="w-8 h-8 flex items-center justify-center border border-zinc-700 text-zinc-500 hover:text-white hover:border-white rounded-full transition-all"
+                    className="w-8 h-8 flex items-center justify-center border border-zinc-800 bg-zinc-900 text-zinc-500 hover:text-white hover:border-white rounded-full transition-all"
                  >
                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 12M2 2l10 10"/></svg>
                  </button>
              </div>
 
              <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar space-y-8">
-                 {/* Gallery with CRT effect */}
+                 {/* Gallery - No CRT Effect */}
                  <div className="relative">
                     <PhotoGallery photos={business.photos} businessName={business.name} />
-                    <div className="absolute inset-0 crt-overlay pointer-events-none opacity-30"></div>
                  </div>
                  
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -5,16 +5,30 @@ import { WeatherState, WeatherCondition } from '../types';
 // This allows the user to simulate different conditions to test the AI's response.
 
 export const getRandomWeather = (): WeatherState => {
-    const conditions: WeatherCondition[] = ['Sunny', 'Cloudy', 'Foggy', 'Rainy'];
+    // Determine strict time of day for the icon
     const hour = new Date().getHours();
     const isNight = hour < 6 || hour > 19;
     
-    // Weighted random
-    const baseCondition = isNight ? 'Night' : conditions[Math.floor(Math.random() * conditions.length)];
+    // Conditions available for random selection (excluding Night, which is time-forced)
+    const dayConditions: WeatherCondition[] = ['Sunny', 'Cloudy', 'Foggy', 'Rainy'];
+    const nightConditions: WeatherCondition[] = ['Night']; // At night, usually just clear/moon or rainy night, but simplifying to Night icon.
+
+    let baseCondition: WeatherCondition = 'Sunny';
+
+    if (isNight) {
+        baseCondition = 'Night';
+    } else {
+        // Simple random weighted towards Sunny/Cloudy for demo purposes
+        const rand = Math.random();
+        if (rand > 0.8) baseCondition = 'Rainy';
+        else if (rand > 0.6) baseCondition = 'Foggy';
+        else if (rand > 0.3) baseCondition = 'Cloudy';
+        else baseCondition = 'Sunny';
+    }
     
     return {
         condition: baseCondition,
-        temperature: Math.floor(Math.random() * (30 - 10) + 10), // 10C to 30C
+        temperature: Math.floor(Math.random() * (25 - 12) + 12), // 12C to 25C range
         isSimulated: true
     };
 };

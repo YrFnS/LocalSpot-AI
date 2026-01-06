@@ -9,7 +9,32 @@ interface BusinessGridProps {
   onHover: (id: string | null) => void;
 }
 
+const ScanLoader = () => (
+    <div className="h-full w-full p-4 md:p-8 bg-zinc-950/50 overflow-hidden relative">
+        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="break-inside-avoid relative overflow-hidden rounded-lg bg-zinc-900 border border-zinc-800 aspect-[4/5]">
+                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent opacity-50"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent h-[200%] w-full animate-[spin_4s_linear_infinite] translate-y-[-50%]"></div>
+                    <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+                        <div className="h-4 bg-zinc-800 rounded w-2/3 animate-pulse"></div>
+                        <div className="h-3 bg-zinc-800/50 rounded w-1/3 animate-pulse"></div>
+                    </div>
+                </div>
+            ))}
+        </div>
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div className="px-4 py-2 bg-black/80 backdrop-blur border border-primary/30 text-primary font-mono text-xs tracking-widest animate-pulse">
+                SCANNING SECTOR...
+            </div>
+        </div>
+    </div>
+);
+
 export const BusinessGrid: React.FC<BusinessGridProps> = ({ businesses, onSelect, selectedId, onHover }) => {
+  // We don't have an explicit 'isLoading' prop passed here currently, 
+  // but if the list is empty and we are technically searching, the parent handles it.
+  // However, if we just have 0 results after search:
   if (businesses.length === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center flex-col gap-4 bg-[#050505]">

@@ -119,11 +119,21 @@ const App: React.FC = () => {
       );
   };
 
+  // Format location string based on user coordinates with correct cardinal directions
+  const formatCoord = (val: number, type: 'lat' | 'lng') => {
+    const abs = Math.abs(val).toFixed(3);
+    if (type === 'lat') return val >= 0 ? `${abs}°N` : `${abs}°S`;
+    return val >= 0 ? `${abs}°E` : `${abs}°W`;
+  };
+
+  const locationLabel = state.userLocation 
+      ? `${formatCoord(state.userLocation.latitude, 'lat')} / ${formatCoord(state.userLocation.longitude, 'lng')}`
+      : "ACQUIRING SIGNAL...";
+
   return (
     <div className="flex flex-col h-screen w-full bg-background text-zinc-100 overflow-hidden font-sans relative">
       <div className={`absolute inset-0 bg-gradient-to-br ${themeClass} transition-colors duration-1000 z-0 pointer-events-none opacity-40`} />
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 pointer-events-none brightness-100 contrast-150 mix-blend-overlay"></div>
-
+      
       <OracleOverlay isOpen={isOracleOpen} onClose={toggleOracle} isConnected={isLiveConnected} isSpeaking={isLiveSpeaking} volume={liveVolume} />
       
       <CuratorPanel 
@@ -175,7 +185,7 @@ const App: React.FC = () => {
             <div className="flex-1 max-w-2xl flex items-stretch h-10 gap-2">
                  {/* Environmental HUD */}
                  <div className="hidden lg:block h-full">
-                     <ContextHud weather={weather} onWeatherToggle={handlers.handleWeatherToggle} />
+                     <ContextHud weather={weather} onWeatherToggle={handlers.handleWeatherToggle} locationName={locationLabel} />
                  </div>
                  <div className="flex-1">
                     <SearchBar 
@@ -348,22 +358,23 @@ const App: React.FC = () => {
                 </div>
             )}
         </div>
-        
-        {showDetailModal && selectedBusiness && (
-            <BusinessDetailModal 
-                business={selectedBusiness} 
-                onClose={() => setShowDetailModal(false)} 
-                onSpeak={handlers.handleSpeak} 
-                isFavorite={handlers.isFavorite(state.selectedBusinessId!)} 
-                onToggleFavorite={handlers.toggleFavorite} 
-                onUpdateNote={handlers.updateNote} 
-                onAddTag={handlers.addTag} 
-                onRemoveTag={handlers.removeTag} 
-                userNote={selectedBusiness.userNote} 
-                userTags={selectedBusiness.userTags} 
-            />
-        )}
       </main>
+
+      {/* Detail Modal - Moved outside main to ensure it overlays header via stacking context */}
+      {showDetailModal && selectedBusiness && (
+        <BusinessDetailModal 
+            business={selectedBusiness} 
+            onClose={() => setShowDetailModal(false)} 
+            onSpeak={handlers.handleSpeak} 
+            isFavorite={handlers.isFavorite(state.selectedBusinessId!)} 
+            onToggleFavorite={handlers.toggleFavorite} 
+            onUpdateNote={handlers.updateNote} 
+            onAddTag={handlers.addTag} 
+            onRemoveTag={handlers.removeTag} 
+            userNote={selectedBusiness.userNote} 
+            userTags={selectedBusiness.userTags} 
+        />
+      )}
     </div>
   );
 };

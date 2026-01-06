@@ -17,7 +17,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({ b1, b2, result
             <div className="relative w-full max-w-4xl bg-zinc-950 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 
                 {/* Header */}
-                <div className="relative py-8 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-black border-b border-zinc-800">
+                <div className="relative py-8 bg-black border-b border-zinc-800">
                      <button onClick={onClose} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                      </button>

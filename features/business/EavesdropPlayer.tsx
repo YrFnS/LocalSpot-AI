@@ -121,8 +121,6 @@ export const EavesdropPlayer: React.FC<EavesdropPlayerProps> = ({ business }) =>
 
     return (
         <div className="relative overflow-hidden rounded-lg bg-black border border-zinc-800 p-4 mb-6 group">
-            {/* Holographic BG */}
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
             <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
             <div className="flex items-center justify-between relative z-10">

@@ -64,9 +64,6 @@ export const ContextHud: React.FC<ContextHudProps> = ({ weather, onWeatherToggle
                 <span className={`text-[10px] font-mono font-bold uppercase transition-colors ${weather.condition === 'Rainy' ? 'text-blue-400' : (weather.condition === 'Sunny' ? 'text-orange-400' : 'text-zinc-300')}`}>
                     {weather.condition} • {weather.temperature}°
                 </span>
-                <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider group-hover:text-primary transition-colors">
-                    {weather.isSimulated ? 'SIMULATED' : 'LIVE FEED'}
-                </span>
             </div>
         </button>
     </div>

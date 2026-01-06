@@ -84,13 +84,15 @@ export const VibeSynthesizer: React.FC<VibeSynthesizerProps> = ({ isOpen, onClos
             </div>
 
             {/* Controls */}
-            <div className="flex-1 p-8 overflow-y-auto bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-90 relative">
-                {/* Visualizer BG */}
-                <div className="absolute inset-0 pointer-events-none opacity-10 flex items-center justify-center">
-                    <div className="w-64 h-64 border border-zinc-500 rounded-full animate-[spin_10s_linear_infinite]"></div>
-                    <div className="absolute w-48 h-48 border border-zinc-500 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
-                </div>
+            <div className="flex-1 p-8 overflow-y-auto relative">
                 
+                <div className="mb-8 p-4 bg-zinc-900/50 rounded border border-zinc-800">
+                    <p className="text-xs text-zinc-400 leading-relaxed font-mono">
+                        <span className="text-primary font-bold">What is this?</span><br/>
+                        Adjust the sliders below to fine-tune your search query based on abstract qualities. The AI will translate these parameters into specific search terms.
+                    </p>
+                </div>
+
                 <div className="relative z-10 space-y-8">
                     {renderSlider('Entropy', 'entropy', 'Serene', 'Chaotic')}
                     {renderSlider('Grit', 'grit', 'Polished', 'Raw')}
