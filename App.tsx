@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { SearchBar } from './features/search/SearchBar';
 import { FilterBar } from './features/search/FilterBar';
@@ -134,7 +133,10 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen w-full bg-background text-zinc-100 overflow-hidden font-sans relative">
+      {/* GLOBAL ATMOSPHERE LAYERS */}
       <div className={`absolute inset-0 bg-gradient-to-br ${themeClass} transition-colors duration-1000 z-0 pointer-events-none opacity-40`} />
+      <div className="absolute inset-0 z-[1] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] pointer-events-none"></div>
+      <div className="absolute inset-0 z-[1] shadow-[inset_0_0_100px_rgba(0,0,0,0.8)] pointer-events-none"></div>
       
       <OracleOverlay isOpen={isOracleOpen} onClose={toggleOracle} isConnected={isLiveConnected} isSpeaking={isLiveSpeaking} volume={liveVolume} />
       
@@ -177,11 +179,11 @@ const App: React.FC = () => {
           />
       )}
 
-      <header className="z-50 border-b border-zinc-800 bg-background/80 backdrop-blur-md flex flex-col gap-0">
+      <header className="z-50 border-b border-zinc-800 bg-background/80 backdrop-blur-md flex flex-col gap-0 relative shadow-2xl">
          <div className="px-4 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 shrink-0">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-orange-600 rounded-sm flex items-center justify-center font-bold text-black font-mono shadow-lg shadow-primary/20">LS</div>
-                <h1 className="text-lg font-bold tracking-tighter hidden md:block">LOCALSPOT</h1>
+                <div className="w-8 h-8 bg-gradient-to-br from-primary to-orange-600 rounded-sm flex items-center justify-center font-bold text-black font-mono shadow-[0_0_15px_rgba(249,115,22,0.5)] border border-white/20">LS</div>
+                <h1 className="text-lg font-bold tracking-tighter hidden md:block text-white">LOCALSPOT</h1>
             </div>
             
             <div className="flex-1 max-w-2xl flex items-stretch h-10 gap-2">
@@ -202,30 +204,30 @@ const App: React.FC = () => {
                 <AudioVisualizer isPlaying={isAudioPlaying} />
                 <button 
                     onClick={() => setIsSynthesizerOpen(true)}
-                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-700 text-xs font-mono text-cyan-400 hover:text-white hover:border-cyan-500 transition-colors"
+                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-sm bg-zinc-900 border border-zinc-700 text-xs font-mono text-cyan-400 hover:text-white hover:border-cyan-500 transition-colors shadow-sm"
                 >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v18"></path><path d="M6 8v8"></path><path d="M18 8v8"></path><path d="M2 12h20"></path></svg>
                     SYNTH
                 </button>
                 <button 
                     onClick={() => setIsCuratorOpen(true)}
-                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-700 text-xs font-mono text-purple-400 hover:text-white hover:border-purple-500 transition-colors"
+                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-sm bg-zinc-900 border border-zinc-700 text-xs font-mono text-purple-400 hover:text-white hover:border-purple-500 transition-colors shadow-sm"
                 >
                     <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
                     CURATE
                 </button>
                 <div className="h-6 w-[1px] bg-zinc-800 mx-2"></div>
-                <div className="flex bg-zinc-900 rounded p-1 gap-1">
-                    <button onClick={() => setViewMode(ViewMode.LIST)} className={`p-1.5 rounded font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.LIST ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`} title="List View">
+                <div className="flex bg-zinc-900 rounded-sm p-0.5 gap-0.5 border border-zinc-800">
+                    <button onClick={() => setViewMode(ViewMode.LIST)} className={`p-1.5 rounded-sm font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.LIST ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`} title="List View">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                     </button>
-                    <button onClick={() => setViewMode(ViewMode.RADAR)} className={`p-1.5 rounded font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.RADAR ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`} title="Radar View">
+                    <button onClick={() => setViewMode(ViewMode.RADAR)} className={`p-1.5 rounded-sm font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.RADAR ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`} title="Radar View">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
                     </button>
-                    <button onClick={() => setViewMode(ViewMode.MAP)} className={`p-1.5 rounded font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.MAP ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`} title="Map View">
+                    <button onClick={() => setViewMode(ViewMode.MAP)} className={`p-1.5 rounded-sm font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.MAP ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`} title="Map View">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 6v16l7-4 7 4 7-4V2l-7 4-7-4-7 4z"></path><line x1="8" y1="2" x2="8" y2="18"></line><line x1="15" y1="6" x2="15" y2="22"></line></svg>
                     </button>
-                    <button onClick={() => setViewMode(ViewMode.GRID)} className={`p-1.5 rounded font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.GRID ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`} title="Grid View">
+                    <button onClick={() => setViewMode(ViewMode.GRID)} className={`p-1.5 rounded-sm font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.GRID ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`} title="Grid View">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     </button>
                 </div>
@@ -343,7 +345,7 @@ const App: React.FC = () => {
             </button>
             
             {state.selectedBusinessId && (viewMode === ViewMode.RADAR || viewMode === ViewMode.MAP) && selectedBusiness && !showDetailModal && (
-                <div onClick={() => handlers.handleOpenDetail(state.selectedBusinessId!)} className="absolute bottom-6 left-4 right-4 md:left-auto md:right-24 md:w-80 glass-panel rounded-lg p-5 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 cursor-pointer hover:bg-zinc-900/80 transition-colors group">
+                <div onClick={() => handlers.handleOpenDetail(state.selectedBusinessId!)} className="absolute bottom-6 left-4 right-4 md:left-auto md:right-24 md:w-80 glass-panel rounded-sm p-5 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 cursor-pointer hover:bg-zinc-900/80 transition-colors group">
                     <div className="flex justify-between items-start mb-2"><h2 className="font-bold text-white text-xl tracking-tight group-hover:text-primary transition-colors line-clamp-1">{selectedBusiness.name}</h2></div>
                     <p className="text-sm text-zinc-300 leading-relaxed line-clamp-2 font-light border-l-2 border-zinc-700 pl-3 mb-2">{selectedBusiness.description}</p>
                     <div className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300">CLICK TO EXPAND DOSSIER</div>

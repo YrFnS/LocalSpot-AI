@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface AudioVisualizerProps {
@@ -5,24 +6,23 @@ interface AudioVisualizerProps {
 }
 
 export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ isPlaying }) => {
-  if (!isPlaying) return null;
-
   return (
-    <div className="flex items-end justify-center gap-1 h-4">
-      {[...Array(5)].map((_, i) => (
+    <div className="flex items-center gap-1 h-5 px-2 bg-black/20 rounded border border-zinc-800/50">
+      {[...Array(8)].map((_, i) => (
         <div
           key={i}
-          className="w-1 bg-primary animate-pulse"
+          className={`w-0.5 bg-primary transition-all duration-75 ease-in-out ${isPlaying ? 'animate-pulse' : 'h-1 opacity-20'}`}
           style={{
-            height: '100%',
-            animationDuration: `${0.4 + i * 0.1}s`,
+            height: isPlaying ? `${Math.max(20, Math.random() * 100)}%` : '20%',
             animationDelay: `${i * 0.05}s`
           }}
         />
       ))}
-      <span className="ml-2 text-[10px] font-mono text-primary uppercase animate-pulse">
-        Audio Active
-      </span>
+      {isPlaying && (
+          <span className="ml-1 text-[8px] font-mono text-primary uppercase animate-pulse">
+            TX_ACTIVE
+          </span>
+      )}
     </div>
   );
 };

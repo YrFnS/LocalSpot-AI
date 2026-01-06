@@ -12,87 +12,141 @@ interface ComparisonModalProps {
 export const ComparisonModal: React.FC<ComparisonModalProps> = ({ b1, b2, result, onClose }) => {
     if (!result) return null;
 
+    const renderStatBar = (val: number, max: number, colorClass: string) => (
+        <div className="h-1.5 w-full bg-zinc-800 rounded-sm overflow-hidden flex">
+            {[...Array(max)].map((_, i) => (
+                <div key={i} className={`flex-1 border-r border-zinc-900 ${i < val ? colorClass : 'bg-transparent'}`}></div>
+            ))}
+        </div>
+    );
+
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-300 p-4">
-            <div className="relative w-full max-w-4xl bg-zinc-950 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md animate-in fade-in duration-300 p-0 md:p-8">
+            <div className="relative w-full max-w-5xl bg-[#09090b] border border-zinc-800 shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-full md:max-h-[90vh]">
                 
-                {/* Header */}
-                <div className="relative py-8 bg-black border-b border-zinc-800">
-                     <button onClick={onClose} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                     </button>
-                     <div className="text-center">
-                         <h3 className="text-primary font-mono text-xs tracking-[0.3em] uppercase mb-2">VERSUS MODE ANALYSIS</h3>
-                         <h1 className="text-3xl md:text-5xl font-black text-white italic tracking-tighter uppercase transparent-text-stroke">
-                             {result.headline || "HEAD TO HEAD"}
-                         </h1>
-                     </div>
+                {/* Tactical Grid Background */}
+                <div className="absolute inset-0 pointer-events-none opacity-10" 
+                     style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
                 </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    {/* Contenders */}
-                    <div className="grid grid-cols-2 border-b border-zinc-800">
+                {/* Header */}
+                <div className="relative py-4 px-6 bg-zinc-900/50 border-b border-zinc-800 flex justify-between items-center z-10">
+                     <div className="flex items-center gap-4">
+                         <div className="w-2 h-8 bg-primary"></div>
+                         <div>
+                             <h3 className="text-primary font-mono text-[10px] tracking-[0.3em] uppercase">TACTICAL ANALYSIS</h3>
+                             <h1 className="text-xl font-black text-white italic tracking-tighter uppercase">
+                                 {result.headline || "HEAD TO HEAD"}
+                             </h1>
+                         </div>
+                     </div>
+                     <button onClick={onClose} className="text-zinc-500 hover:text-white hover:bg-zinc-800 p-2 rounded transition-all">
+                        <span className="font-mono text-xs">[ CLOSE_DECK ]</span>
+                     </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar relative z-10">
+                    {/* The Contenders - Split View */}
+                    <div className="grid grid-cols-2 relative min-h-[300px]">
+                        {/* VS Badge */}
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-black border border-zinc-700 rotate-45 flex items-center justify-center shadow-xl">
+                            <span className="-rotate-45 font-black text-white text-sm">VS</span>
+                        </div>
+
                         {[b1, b2].map((b, i) => {
                             const isWinner = result.winnerId === b.id;
+                            const isLeft = i === 0;
                             return (
-                                <div key={b.id} className={`relative p-6 flex flex-col items-center text-center ${i === 0 ? 'border-r border-zinc-800' : ''}`}>
+                                <div key={b.id} className={`relative p-6 md:p-10 flex flex-col ${isLeft ? 'items-end text-right border-r border-zinc-800/50' : 'items-start text-left'} transition-colors ${isWinner ? 'bg-primary/5' : ''}`}>
+                                    {/* Image Mask */}
+                                    <div className={`
+                                        w-32 h-32 md:w-48 md:h-48 mb-6 overflow-hidden border-2 relative
+                                        ${isWinner ? 'border-primary shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-zinc-800 grayscale opacity-70'}
+                                    `}>
+                                        <img src={b.photos?.[0]?.name} className="w-full h-full object-cover" alt={b.name} />
+                                        {/* Scanlines */}
+                                        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] pointer-events-none"></div>
+                                    </div>
+
+                                    <h2 className="text-2xl md:text-3xl font-black text-white uppercase leading-none mb-2">{b.name}</h2>
+                                    <p className="font-mono text-xs text-zinc-500 uppercase tracking-widest mb-6">{b.types?.[0] || 'ENTITY'}</p>
+
+                                    {/* Stats */}
+                                    <div className={`w-full max-w-[200px] space-y-3 ${isLeft ? 'items-end' : 'items-start'}`}>
+                                        <div className="w-full">
+                                            <div className="flex justify-between text-[9px] font-mono text-zinc-400 mb-1">
+                                                <span>RATING</span>
+                                                <span>{b.rating?.toFixed(1)}</span>
+                                            </div>
+                                            {renderStatBar(Math.round(b.rating || 0), 5, isWinner ? 'bg-primary' : 'bg-zinc-600')}
+                                        </div>
+                                        <div className="w-full">
+                                            <div className="flex justify-between text-[9px] font-mono text-zinc-400 mb-1">
+                                                <span>PRICE</span>
+                                                <span>{b.priceLevel?.length || 1}/4</span>
+                                            </div>
+                                            {renderStatBar(b.priceLevel?.length || 1, 4, 'bg-zinc-500')}
+                                        </div>
+                                    </div>
+                                    
                                     {isWinner && (
-                                        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase animate-pulse">
-                                            WINNER
+                                        <div className={`absolute top-4 ${isLeft ? 'left-4' : 'right-4'}`}>
+                                            <div className="border-2 border-primary text-primary px-3 py-1 text-xs font-bold font-mono uppercase tracking-widest -rotate-6 opacity-80">
+                                                Match Winner
+                                            </div>
                                         </div>
                                     )}
-                                    <div className={`w-24 h-24 rounded-full border-4 overflow-hidden mb-4 ${isWinner ? 'border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.4)]' : 'border-zinc-800'}`}>
-                                        <img src={b.photos?.[0]?.name} className="w-full h-full object-cover" alt={b.name} />
-                                    </div>
-                                    <h2 className="text-xl font-bold text-white mb-1">{b.name}</h2>
-                                    <div className="flex gap-2 text-[10px] font-mono text-zinc-500 uppercase">
-                                        <span>{b.rating?.toFixed(1)} ★</span>
-                                        <span>•</span>
-                                        <span>{b.priceLevel || "$$"}</span>
-                                    </div>
-                                    <p className="mt-2 text-xs text-zinc-400 max-w-[200px] line-clamp-2">{b.vibe}</p>
                                 </div>
                             );
                         })}
                     </div>
 
-                    {/* Summary */}
-                    <div className="p-6 text-center border-b border-zinc-800 bg-zinc-900/30">
-                        <p className="text-sm text-zinc-300 italic font-serif leading-relaxed max-w-2xl mx-auto">
-                            "{result.summary}"
-                        </p>
-                    </div>
-
-                    {/* Aspects */}
-                    <div className="p-6 space-y-4">
-                        {result.aspects.map((aspect, idx) => (
-                            <div key={idx} className="bg-zinc-900/50 border border-zinc-800 rounded p-4 flex flex-col md:flex-row items-center gap-4">
-                                <div className="min-w-[100px] text-center md:text-left">
-                                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">{aspect.name}</span>
-                                </div>
-                                <div className="flex-1 flex items-center justify-between gap-4 w-full">
-                                     <div className={`flex-1 text-right text-sm font-bold ${aspect.winnerId === b1.id ? 'text-primary' : 'text-zinc-600'}`}>
-                                         {aspect.winnerId === b1.id ? 'WINNER' : '-'}
-                                     </div>
-                                     <div className="w-px h-8 bg-zinc-800"></div>
-                                     <div className={`flex-1 text-left text-sm font-bold ${aspect.winnerId === b2.id ? 'text-primary' : 'text-zinc-600'}`}>
-                                         {aspect.winnerId === b2.id ? 'WINNER' : '-'}
-                                     </div>
-                                </div>
-                                <div className="w-full md:w-1/3 text-xs text-zinc-400 text-center md:text-left border-t md:border-t-0 md:border-l border-zinc-800 pt-2 md:pt-0 md:pl-4">
-                                    {aspect.description}
-                                </div>
+                    {/* Analysis Stream */}
+                    <div className="border-t border-zinc-800 bg-zinc-900/20 p-6 md:p-8">
+                        <div className="max-w-3xl mx-auto space-y-6">
+                            <div className="text-center mb-8">
+                                <h4 className="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.2em] mb-2">AI SUMMARY LOG</h4>
+                                <p className="text-sm md:text-base text-zinc-200 font-serif italic leading-relaxed">
+                                    "{result.summary}"
+                                </p>
                             </div>
-                        ))}
+
+                            <div className="grid gap-2">
+                                {result.aspects.map((aspect, idx) => (
+                                    <div key={idx} className="flex flex-col md:flex-row bg-zinc-900/80 border border-zinc-800 p-0 overflow-hidden">
+                                        <div className="w-full md:w-32 bg-black flex items-center justify-center p-2 border-b md:border-b-0 md:border-r border-zinc-800">
+                                            <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">{aspect.name}</span>
+                                        </div>
+                                        
+                                        <div className="flex-1 p-3 flex items-center gap-4 relative">
+                                            {/* Advantage Indicator */}
+                                            <div className="absolute inset-y-0 left-0 w-1 bg-zinc-800">
+                                                <div className={`h-1/2 w-full transition-all ${aspect.winnerId === b1.id ? 'bg-primary top-0' : 'bg-transparent'}`}></div>
+                                                <div className={`h-1/2 w-full transition-all ${aspect.winnerId === b2.id ? 'bg-primary bottom-0' : 'bg-transparent'}`}></div>
+                                            </div>
+                                            
+                                            <p className="text-xs text-zinc-300 pl-2">{aspect.description}</p>
+                                        </div>
+                                        
+                                        <div className="w-full md:w-32 flex items-center justify-center p-2 bg-zinc-950/50 border-t md:border-t-0 md:border-l border-zinc-800">
+                                            <span className={`text-[9px] font-bold font-mono uppercase ${aspect.winnerId ? 'text-primary' : 'text-zinc-600'}`}>
+                                                {aspect.winnerId === b1.id ? b1.name.substring(0,8)+'...' : (aspect.winnerId === b2.id ? b2.name.substring(0,8)+'...' : 'DRAW')}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Final Verdict */}
-                    <div className="p-6 bg-gradient-to-b from-transparent to-primary/5 text-center">
-                         <h3 className="text-xs font-mono text-primary uppercase tracking-widest mb-2">FINAL VERDICT</h3>
-                         <p className="text-white font-bold text-lg mb-1">
-                             {result.winnerId === b1.id ? b1.name : (result.winnerId === b2.id ? b2.name : "It's a Tie")}
+                    {/* Final Verdict Footer */}
+                    <div className="bg-primary/10 border-t border-primary/20 p-8 text-center relative overflow-hidden">
+                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none"></div>
+                         <h3 className="text-xs font-mono text-primary-400 uppercase tracking-[0.3em] mb-2 relative z-10">RECOMMENDATION PROTOCOL</h3>
+                         <p className="text-2xl md:text-4xl font-black text-white uppercase tracking-tight mb-2 relative z-10">
+                             {result.winnerId === b1.id ? b1.name : (result.winnerId === b2.id ? b2.name : "TIE GAME")}
                          </p>
-                         <p className="text-xs text-zinc-400 max-w-md mx-auto">{result.winnerReason}</p>
+                         <p className="text-sm text-zinc-400 max-w-lg mx-auto font-mono relative z-10">{result.winnerReason}</p>
                     </div>
                 </div>
             </div>
