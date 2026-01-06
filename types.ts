@@ -68,10 +68,17 @@ export interface SearchState {
   error: string | null;
 }
 
+export enum SortOption {
+  RELEVANCE = 'RELEVANCE',
+  RATING = 'RATING',
+  DISTANCE = 'DISTANCE'
+}
+
 export interface FilterState {
   minRating: number; // 0-5
   priceLevels: string[]; // ["FREE", "$", "$$", "$$$", "$$$$"]
   onlyOpen: boolean;
+  sortBy: SortOption;
 }
 
 export enum ViewMode {

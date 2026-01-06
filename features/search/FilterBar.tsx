@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { FilterState } from '../../types';
+import { FilterState, SortOption } from '../../types';
 
 interface FilterBarProps {
   filters: FilterState;
@@ -8,6 +9,7 @@ interface FilterBarProps {
 
 export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
   const [isRatingOpen, setIsRatingOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
   
   const togglePrice = (price: string) => {
     const current = filters.priceLevels;
@@ -23,8 +25,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
       { value: 4.0, label: '4.0+' },
       { value: 4.5, label: '4.5+' },
   ];
+  
+  const sortOptions = [
+      { value: SortOption.RELEVANCE, label: 'RELEVANCE' },
+      { value: SortOption.RATING, label: 'RATING' },
+      { value: SortOption.DISTANCE, label: 'DISTANCE' },
+  ];
 
   const currentRatingLabel = ratings.find(r => r.value === filters.minRating)?.label || 'ANY';
+  const currentSortLabel = sortOptions.find(s => s.value === filters.sortBy)?.label || 'RELEVANCE';
 
   return (
     <div className="flex flex-wrap gap-2 py-2 px-4 border-b border-zinc-800 bg-zinc-900/30 backdrop-blur-sm z-30 relative">
@@ -34,7 +43,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
                 onClick={() => setIsRatingOpen(!isRatingOpen)}
                 className="flex items-center bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-[10px] font-mono hover:border-zinc-600 transition-colors h-[26px]"
            >
-              <span className="text-zinc-500 mr-2">MIN RATING</span>
+              <span className="text-zinc-500 mr-2">RATING</span>
               <span className="text-white min-w-[24px] text-left">{currentRatingLabel}</span>
               <svg 
                 className={`ml-1 w-3 h-3 text-zinc-500 transition-transform duration-200 ${isRatingOpen ? 'rotate-180' : ''}`} 
@@ -100,9 +109,51 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
           OPEN NOW
        </button>
        
-       {(filters.minRating > 0 || filters.priceLevels.length > 0 || filters.onlyOpen) && (
+       <div className="w-[1px] h-[16px] bg-zinc-800 self-center mx-1"></div>
+
+       {/* Sorting Dropdown */}
+       <div className="relative">
            <button 
-             onClick={() => onChange({ minRating: 0, priceLevels: [], onlyOpen: false })}
+                onClick={() => setIsSortOpen(!isSortOpen)}
+                className="flex items-center bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-[10px] font-mono hover:border-zinc-600 transition-colors h-[26px] min-w-[120px]"
+           >
+              <span className="text-zinc-500 mr-2">SORT</span>
+              <span className="text-white flex-1 text-left">{currentSortLabel}</span>
+              <svg 
+                className={`ml-1 w-3 h-3 text-zinc-500 transition-transform duration-200 ${isSortOpen ? 'rotate-180' : ''}`} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+           </button>
+           
+           {isSortOpen && (
+               <>
+               <div className="fixed inset-0 z-10" onClick={() => setIsSortOpen(false)} />
+               <div className="absolute top-full left-0 mt-1 w-36 bg-zinc-900 border border-zinc-800 rounded shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                   {sortOptions.map(s => (
+                       <button
+                           key={s.value}
+                           onClick={() => {
+                               onChange({ ...filters, sortBy: s.value });
+                               setIsSortOpen(false);
+                           }}
+                           className={`w-full text-left px-3 py-2 text-xs font-mono hover:bg-zinc-800 transition-colors flex justify-between items-center ${filters.sortBy === s.value ? 'text-primary bg-zinc-800/50' : 'text-zinc-300'}`}
+                       >
+                           {s.label}
+                           {filters.sortBy === s.value && <span className="text-primary">✓</span>}
+                       </button>
+                   ))}
+               </div>
+               </>
+           )}
+       </div>
+
+       {(filters.minRating > 0 || filters.priceLevels.length > 0 || filters.onlyOpen || filters.sortBy !== SortOption.RELEVANCE) && (
+           <button 
+             onClick={() => onChange({ minRating: 0, priceLevels: [], onlyOpen: false, sortBy: SortOption.RELEVANCE })}
              className="ml-auto text-[10px] text-red-400 hover:text-red-300 font-mono underline decoration-dotted"
            >
              RESET

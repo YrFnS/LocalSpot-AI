@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Business, SearchState, ViewMode, FilterState, Tab } from '../types';
+import { Business, SearchState, ViewMode, FilterState, Tab, SortOption } from '../types';
 import { searchLocalBusinesses, getFeaturedBusinesses, speakDescription, getAiSuggestions } from '../services/geminiService';
 import { useGeolocation } from './useGeolocation';
 import { useFavorites } from './useFavorites';
@@ -35,7 +35,8 @@ export const useAppController = () => {
     const [filters, setFilters] = useState<FilterState>({
         minRating: 0,
         priceLevels: [],
-        onlyOpen: false
+        onlyOpen: false,
+        sortBy: SortOption.RELEVANCE
     });
     
     const [showDetailModal, setShowDetailModal] = useState(false);
