@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { BookingSlot } from '../../types';
 
@@ -27,69 +28,111 @@ export const BookingWidget: React.FC<BookingWidgetProps> = ({ slots, onBook }) =
 
   if (step === 'SUCCESS') {
     return (
-      <div className="bg-green-900/10 border border-green-500/20 rounded p-6 flex flex-col items-center justify-center text-center animate-in zoom-in duration-300">
-        <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mb-3 shadow-[0_0_15px_rgba(34,197,94,0.5)]">
-           <svg className="w-6 h-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+      <div className="bg-green-950/20 border border-green-500/30 p-6 flex flex-col items-center justify-center text-center animate-in zoom-in duration-300 relative overflow-hidden group">
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(34,197,94,0.05)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_2s_infinite]"></div>
+        <div className="w-16 h-16 border-2 border-green-500 rounded-full flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(34,197,94,0.4)] relative">
+            <div className="absolute inset-1 border border-green-500/50 rounded-full animate-ping"></div>
+            <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
         </div>
-        <h3 className="text-green-400 font-bold font-mono tracking-widest text-sm mb-1">CONFIRMED</h3>
-        <p className="text-zinc-400 text-xs">Table for {guests} at {selectedSlot}</p>
+        <h3 className="text-green-400 font-bold font-mono tracking-[0.2em] text-sm mb-2">ACCESS GRANTED</h3>
+        <div className="h-px w-12 bg-green-500/50 mb-2"></div>
+        <p className="text-green-300/70 text-xs font-mono uppercase">
+            Slot Confirmed: {selectedSlot}<br/>
+            Pax: {guests} Unit{guests > 1 ? 's' : ''}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800 rounded p-4">
-      <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">RESERVE A TABLE</h3>
-          <div className="flex items-center gap-2 bg-zinc-800 rounded px-2 py-1">
+    <div className="bg-[#09090b] border border-zinc-800 p-0 relative overflow-hidden group">
+      {/* Header */}
+      <div className="bg-zinc-900/50 p-3 border-b border-zinc-800 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-primary rounded-sm animate-pulse"></div>
+              <h3 className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">RESERVATION PROTOCOL</h3>
+          </div>
+          
+          {/* Guest Counter */}
+          <div className="flex items-center gap-1 border border-zinc-700 bg-zinc-800 rounded-sm overflow-hidden">
              <button 
                 onClick={() => setGuests(Math.max(1, guests - 1))}
-                className="text-zinc-400 hover:text-white"
+                className="px-2 py-0.5 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors border-r border-zinc-700"
              >-</button>
-             <span className="text-xs font-mono text-white w-4 text-center">{guests}</span>
+             <span className="text-[10px] font-mono text-white w-8 text-center bg-zinc-900 py-0.5">{guests.toString().padStart(2, '0')}</span>
              <button 
                  onClick={() => setGuests(Math.min(10, guests + 1))}
-                 className="text-zinc-400 hover:text-white"
+                 className="px-2 py-0.5 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors border-l border-zinc-700"
              >+</button>
-             <span className="text-[10px] text-zinc-500 ml-1">PPL</span>
           </div>
       </div>
 
-      <div className="mb-4">
-         <p className="text-[10px] text-zinc-500 mb-2 font-mono">AVAILABLE TODAY</p>
-         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="p-4">
+         <div className="flex justify-between items-end mb-3">
+             <span className="text-[9px] text-zinc-600 font-mono uppercase">AVAILABLE VECTORS</span>
+             <span className="text-[9px] text-primary font-mono animate-pulse">LIVE</span>
+         </div>
+         
+         <div className="grid grid-cols-4 gap-2 mb-6">
             {slots.map((slot, idx) => (
                 <button
                    key={idx}
                    disabled={!slot.available}
                    onClick={() => setSelectedSlot(slot.time)}
                    className={`
-                      px-3 py-2 rounded text-xs font-mono transition-all duration-200 whitespace-nowrap border
+                      relative px-1 py-2 text-[10px] font-mono transition-all duration-200 border
                       ${!slot.available 
-                          ? 'opacity-30 cursor-not-allowed border-transparent bg-zinc-900 text-zinc-500 line-through' 
+                          ? 'opacity-20 cursor-not-allowed border-transparent bg-zinc-900 text-zinc-500 decoration-zinc-600 line-through' 
                           : selectedSlot === slot.time
-                              ? 'bg-primary text-black border-primary shadow-[0_0_10px_rgba(249,115,22,0.4)]'
-                              : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:border-zinc-600'}
+                              ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(249,115,22,0.4)] font-bold'
+                              : 'bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:border-zinc-500 hover:text-white hover:bg-zinc-800'}
                    `}
                 >
                    {slot.time}
+                   {selectedSlot === slot.time && (
+                       <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-white shadow-sm"></div>
+                   )}
                 </button>
             ))}
          </div>
-      </div>
 
-      <button
-         onClick={handleBook}
-         disabled={!selectedSlot || isProcessing}
-         className={`
-            w-full py-3 rounded text-xs font-bold font-mono tracking-wider transition-all
-            ${!selectedSlot 
-                ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' 
-                : 'bg-white text-black hover:bg-zinc-200'}
-         `}
-      >
-         {isProcessing ? 'PROCESSING...' : selectedSlot ? `CONFIRM ${selectedSlot}` : 'SELECT A TIME'}
-      </button>
+        <button
+            onClick={handleBook}
+            disabled={!selectedSlot || isProcessing}
+            className={`
+                w-full py-3 relative overflow-hidden group/btn
+                ${!selectedSlot 
+                    ? 'bg-zinc-900 border border-zinc-800 text-zinc-600 cursor-not-allowed' 
+                    : 'bg-white text-black hover:bg-zinc-200'}
+            `}
+        >
+            <div className={`text-[10px] font-bold font-mono tracking-[0.2em] uppercase flex items-center justify-center gap-2 relative z-10`}>
+                {isProcessing ? (
+                    <>
+                        <span className="w-2 h-2 bg-black rounded-full animate-bounce"></span>
+                        <span className="w-2 h-2 bg-black rounded-full animate-bounce delay-75"></span>
+                        <span className="w-2 h-2 bg-black rounded-full animate-bounce delay-150"></span>
+                    </>
+                ) : selectedSlot ? (
+                    <>
+                        <span>INITIATE BOOKING</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </>
+                ) : (
+                    'SELECT TIME SLOT'
+                )}
+            </div>
+            
+            {/* Scanline effect on button */}
+            {selectedSlot && !isProcessing && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 ease-in-out"></div>
+            )}
+        </button>
+      </div>
+      
+      {/* Decorative corners */}
+      <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-zinc-600"></div>
+      <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-zinc-600"></div>
     </div>
   );
 };
