@@ -69,7 +69,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, sug
         ${isSearching ? 'animate-pulse opacity-100' : ''}
       `}></div>
       
-      <div className="relative flex items-center bg-black/80 backdrop-blur-xl border border-zinc-800 focus-within:border-zinc-600 transition-colors">
+      <div className="relative flex items-center bg-black/90 backdrop-blur-xl border border-zinc-800 focus-within:border-primary/50 transition-colors">
         <div className="pl-4 text-zinc-500">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
@@ -113,7 +113,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, sug
         
         <button
             type="submit"
-            className="px-6 py-3 bg-white hover:bg-zinc-200 text-black font-bold font-mono text-xs tracking-widest transition-colors border-l border-zinc-200"
+            className="px-6 py-3 bg-zinc-900 hover:bg-zinc-800 text-primary font-bold font-mono text-xs tracking-widest transition-colors border-l border-zinc-800 group-focus-within:bg-primary group-focus-within:text-black"
         >
             SCAN
         </button>
