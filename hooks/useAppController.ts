@@ -1,7 +1,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Business, SearchState, ViewMode, FilterState, Tab, SortOption } from '../types';
+import { Business, SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition } from '../types';
 import { searchLocalBusinesses, getFeaturedBusinesses, speakDescription, getAiSuggestions } from '../services/geminiService';
+import { getRandomWeather } from '../services/weatherService';
 import { useGeolocation } from './useGeolocation';
 import { useFavorites } from './useFavorites';
 import { getThemeForQuery, THEMES } from '../utils/themeUtils';
@@ -32,6 +33,9 @@ export const useAppController = () => {
     // New Global Hover State
     const [hoveredBusinessId, setHoveredBusinessId] = useState<string | null>(null);
     
+    // Context State
+    const [weather, setWeather] = useState<WeatherState>(getRandomWeather());
+
     const [filters, setFilters] = useState<FilterState>({
         minRating: 0,
         priceLevels: [],
@@ -45,16 +49,23 @@ export const useAppController = () => {
     useEffect(() => {
         if (userLocation) {
             setState(s => ({ ...s, userLocation }));
+            // Only fetch if empty results and not simulated weather change
             if (state.results.length === 0 && !state.isSearching) {
-                getFeaturedBusinesses(userLocation)
+                getFeaturedBusinesses(userLocation) // Featured doesn't strictly need weather, but underlying search can use it if updated
                     .then(featured => setState(s => ({ ...s, results: featured })))
-                    .catch(console.error);
-                getAiSuggestions(userLocation)
-                    .then(setAiSuggestions)
                     .catch(console.error);
             }
         }
-    }, [userLocation, state.results.length, state.isSearching]);
+    }, [userLocation]);
+
+    // Update suggestions when context changes
+    useEffect(() => {
+        if (userLocation) {
+             getAiSuggestions(userLocation, weather)
+                .then(setAiSuggestions)
+                .catch(console.error);
+        }
+    }, [userLocation, weather.condition]);
 
     const handleSearch = useCallback(async (query: string) => {
         setActiveTab(Tab.SEARCH);
@@ -63,12 +74,12 @@ export const useAppController = () => {
         setThemeClass(getThemeForQuery(query));
         
         try {
-            const { businesses } = await searchLocalBusinesses(query, state.userLocation);
+            const { businesses } = await searchLocalBusinesses(query, state.userLocation, weather);
             setState(s => ({ ...s, results: businesses, isSearching: false }));
         } catch (error) {
             setState(s => ({ ...s, isSearching: false, error: 'Connection failed.' }));
         }
-    }, [state.userLocation]);
+    }, [state.userLocation, weather]);
 
     const handleSpeak = (text: string) => {
         speakDescription(text, () => setIsAudioPlaying(true), () => setIsAudioPlaying(false));
@@ -89,6 +100,12 @@ export const useAppController = () => {
     const handleRescan = useCallback(() => {
         handleSearch(state.query || "hidden gems and cool spots");
     }, [state.query, handleSearch]);
+
+    const handleWeatherToggle = (condition: WeatherCondition) => {
+        setWeather(prev => ({ ...prev, condition }));
+        // Optional: Auto-trigger rescan if desired, or let user do it.
+        // Let's prompt user or just update suggestions.
+    };
 
     // Computed Data
     const uniqueTags = useMemo(() => {
@@ -133,6 +150,7 @@ export const useAppController = () => {
         favorites,
         hoveredBusinessId,
         setHoveredBusinessId,
+        weather,
         handlers: {
             handleSearch,
             handleSpeak,
@@ -144,7 +162,8 @@ export const useAppController = () => {
             updateNote,
             addTag,
             removeTag,
-            getSelectedBusiness
+            getSelectedBusiness,
+            handleWeatherToggle
         }
     };
 };

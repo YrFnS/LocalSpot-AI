@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 
 interface SearchBarProps {
@@ -22,7 +21,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, sug
     let currentIndex = 0;
     let currentText = "";
     let isDeleting = false;
-    let loopTimeout: NodeJS.Timeout;
+    let loopTimeout: ReturnType<typeof setTimeout>;
 
     const type = () => {
       const fullText = suggestions[currentIndex % suggestions.length];

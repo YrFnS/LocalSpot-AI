@@ -11,6 +11,7 @@ import { CategorySelector } from './features/discovery/CategorySelector';
 import { AudioVisualizer } from './features/visualization/AudioVisualizer';
 import { OracleOverlay } from './features/live/OracleOverlay';
 import { CuratorPanel } from './features/curator/CuratorPanel';
+import { ContextHud } from './features/context/ContextHud';
 import { useLiveSession } from './hooks/useLiveSession';
 import { useAppController } from './hooks/useAppController';
 import { Tab, ViewMode } from './types';
@@ -40,6 +41,7 @@ const App: React.FC = () => {
     favorites,
     hoveredBusinessId,
     setHoveredBusinessId,
+    weather,
     handlers
   } = useAppController();
 
@@ -120,9 +122,17 @@ const App: React.FC = () => {
                 <div className="w-8 h-8 bg-gradient-to-br from-primary to-orange-600 rounded-sm flex items-center justify-center font-bold text-black font-mono shadow-lg shadow-primary/20">LS</div>
                 <h1 className="text-lg font-bold tracking-tighter hidden md:block">LOCALSPOT</h1>
             </div>
-            <div className="flex-1 max-w-2xl">
-                <SearchBar onSearch={handlers.handleSearch} isSearching={state.isSearching} suggestions={aiSuggestions} />
+            
+            <div className="flex-1 max-w-2xl flex items-stretch h-10 gap-2">
+                 {/* Environmental HUD */}
+                 <div className="hidden lg:block h-full">
+                     <ContextHud weather={weather} onWeatherToggle={handlers.handleWeatherToggle} />
+                 </div>
+                 <div className="flex-1">
+                    <SearchBar onSearch={handlers.handleSearch} isSearching={state.isSearching} suggestions={aiSuggestions} />
+                 </div>
             </div>
+
             <div className="flex items-center gap-2 shrink-0">
                 <AudioVisualizer isPlaying={isAudioPlaying} />
                 <button 

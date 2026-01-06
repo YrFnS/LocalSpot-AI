@@ -1,8 +1,9 @@
 
 import { GoogleGenAI, Modality } from "@google/genai";
-import { Business, Coordinates } from "../types";
+import { Business, Coordinates, WeatherState } from "../types";
 import { decodeBase64, decodeAudioData, getAudioContext } from "../utils/audioUtils";
 import { mapAiResponseToBusiness } from "../utils/mapper";
+import { getWeatherDescription } from "../services/weatherService";
 
 // Initialize Gemini Client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -18,11 +19,15 @@ export const getFeaturedBusinesses = async (
     return businesses.slice(0, 15); 
 };
 
-export const getAiSuggestions = async (userLocation: Coordinates | null): Promise<string[]> => {
+export const getAiSuggestions = async (
+    userLocation: Coordinates | null,
+    weather?: WeatherState
+): Promise<string[]> => {
     try {
         const timeContext = new Date().toLocaleString('en-US', { 
             weekday: 'long', hour: 'numeric', minute: 'numeric' 
         });
+        const weatherContext = weather ? getWeatherDescription(weather) : "Unknown";
         
         // Use Gemini 3 Flash for high-speed simple generation
         const response = await ai.models.generateContent({
@@ -30,8 +35,10 @@ export const getAiSuggestions = async (userLocation: Coordinates | null): Promis
             contents: `
                 Context: User is in ${userLocation ? `${userLocation.latitude}, ${userLocation.longitude}` : 'San Francisco'}.
                 Time: ${timeContext}.
+                Weather: ${weatherContext}.
                 
-                Task: Generate 5 short, distinct, punchy local search queries relevant to right now. 
+                Task: Generate 5 short, distinct, punchy local search queries relevant to the current context (time/weather).
+                If raining, suggest cozy/indoor. If sunny, suggest outdoor/parks.
                 Examples: "Late night ramen", "Quiet cafes", "Live jazz".
                 
                 Output: JSON Array of strings only.
@@ -49,7 +56,8 @@ export const getAiSuggestions = async (userLocation: Coordinates | null): Promis
 
 export const searchLocalBusinesses = async (
   query: string, 
-  userLocation: Coordinates | null
+  userLocation: Coordinates | null,
+  weather?: WeatherState
 ): Promise<{ text: string; businesses: Business[] }> => {
   
   try {
@@ -64,17 +72,20 @@ export const searchLocalBusinesses = async (
     const timeContext = new Date().toLocaleString('en-US', { 
         weekday: 'long', hour: 'numeric', minute: 'numeric' 
     });
+    const weatherContext = weather ? getWeatherDescription(weather) : "Unknown";
 
     // STEP 1: Grounded Search (Real Data)
-    // Increased request count to 20 to fill the map
+    // We add context to the query implicitly for the grounding model to find better candidates
+    const contextualQuery = `${query} (Context: ${timeContext}, ${weatherContext})`;
+
     const groundResponse = await ai.models.generateContent({
       model: groundModel,
-      contents: `Find at least 20 distinct businesses for "${query}" near ${userLocation ? `${userLocation.latitude},${userLocation.longitude}` : 'me'}. 
+      contents: `Find at least 20 distinct businesses for "${contextualQuery}" near ${userLocation ? `${userLocation.latitude},${userLocation.longitude}` : 'me'}. 
       Include address, rating, review count, and open status.`,
       config: {
         tools: [{ googleMaps: {} }],
         toolConfig: retrievalConfig ? { retrievalConfig } : undefined, 
-        systemInstruction: `Current Time: ${timeContext}. Find REAL places. Prioritize density and variety.`,
+        systemInstruction: `Current Time: ${timeContext}. Weather: ${weatherContext}. Find REAL places. Prioritize density and variety suitable for this weather/time.`,
       },
     });
 
@@ -90,10 +101,11 @@ export const searchLocalBusinesses = async (
         CONTEXT:
         User Location: ${userLocation?.latitude}, ${userLocation?.longitude}
         Current Time: ${timeContext}
+        Weather: ${weatherContext}
 
         TASK:
         1. Extract business details into JSON.
-        2. Infer a short "Vibe" (e.g., "Cozy", "Industrial").
+        2. Infer a short "Vibe" (e.g., "Cozy", "Industrial") based on the place and current weather context.
         3. If the place is a Restaurant/Bar/Cafe, GENERATE 'slots' (Array<{time: string, available: boolean}>) for the next few hours based on its likely busyness.
         
         SCHEMA:

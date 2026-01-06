@@ -113,3 +113,11 @@ export interface Itinerary {
   items: ItineraryItem[];
   totalCostEstimate: string;
 }
+
+export type WeatherCondition = 'Sunny' | 'Rainy' | 'Cloudy' | 'Foggy' | 'Night';
+
+export interface WeatherState {
+    condition: WeatherCondition;
+    temperature: number;
+    isSimulated: boolean;
+}
