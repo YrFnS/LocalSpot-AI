@@ -12,6 +12,9 @@ import { AudioVisualizer } from './features/visualization/AudioVisualizer';
 import { OracleOverlay } from './features/live/OracleOverlay';
 import { CuratorPanel } from './features/curator/CuratorPanel';
 import { ContextHud } from './features/context/ContextHud';
+import { VisionModal } from './features/search/VisionModal';
+import { CompareTray } from './features/comparison/CompareTray';
+import { ComparisonModal } from './features/comparison/ComparisonModal';
 import { useLiveSession } from './hooks/useLiveSession';
 import { useAppController } from './hooks/useAppController';
 import { Tab, ViewMode } from './types';
@@ -29,7 +32,12 @@ const App: React.FC = () => {
     setIsOracleOpen,
     isCuratorOpen,
     setIsCuratorOpen,
+    isVisionOpen,
+    setIsVisionOpen,
+    isVisionAnalyzing,
+    handleVisionAnalyze,
     aiSuggestions,
+    aiAnalysisResult,
     filters,
     setFilters,
     showDetailModal,
@@ -42,6 +50,10 @@ const App: React.FC = () => {
     hoveredBusinessId,
     setHoveredBusinessId,
     weather,
+    comparisonList,
+    comparisonResult,
+    isComparing,
+    setComparisonResult,
     handlers
   } = useAppController();
 
@@ -116,6 +128,31 @@ const App: React.FC = () => {
         onSelectBusiness={handlers.handleOpenDetail}
       />
 
+      <VisionModal 
+         isOpen={isVisionOpen} 
+         onClose={() => setIsVisionOpen(false)} 
+         onAnalyze={handleVisionAnalyze} 
+         isAnalyzing={isVisionAnalyzing}
+      />
+
+      {comparisonList.length > 0 && (
+          <CompareTray 
+             items={comparisonList} 
+             onRemove={handlers.removeFromComparison} 
+             onAnalyze={handlers.runComparison} 
+             isAnalyzing={isComparing} 
+          />
+      )}
+
+      {comparisonResult && comparisonList.length >= 2 && (
+          <ComparisonModal 
+            b1={comparisonList[0]} 
+            b2={comparisonList[1]} 
+            result={comparisonResult} 
+            onClose={() => setComparisonResult(null)} 
+          />
+      )}
+
       <header className="z-50 border-b border-zinc-800 bg-background/80 backdrop-blur-md flex flex-col gap-0">
          <div className="px-4 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 shrink-0">
@@ -129,7 +166,12 @@ const App: React.FC = () => {
                      <ContextHud weather={weather} onWeatherToggle={handlers.handleWeatherToggle} />
                  </div>
                  <div className="flex-1">
-                    <SearchBar onSearch={handlers.handleSearch} isSearching={state.isSearching} suggestions={aiSuggestions} />
+                    <SearchBar 
+                        onSearch={handlers.handleSearch} 
+                        isSearching={state.isSearching} 
+                        suggestions={aiSuggestions} 
+                        onOpenVision={() => setIsVisionOpen(true)}
+                    />
                  </div>
             </div>
 
@@ -161,6 +203,17 @@ const App: React.FC = () => {
          </div>
          <CategorySelector onSelect={handlers.handleSearch} disabled={state.isSearching} />
          {(state.results.length > 0 || activeTab === Tab.FAVORITES) && <FilterBar filters={filters} onChange={setFilters} />}
+         
+         {/* AI Vision Result Banner */}
+         {aiAnalysisResult && (
+             <div className="bg-primary/10 border-b border-primary/20 p-2 flex items-center justify-center gap-2 animate-in slide-in-from-top-2">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                 <span className="text-[10px] font-mono text-primary-200 uppercase tracking-wide">
+                     VISION ANALYSIS: "{aiAnalysisResult}"
+                 </span>
+                 <button onClick={() => handlers.handleSearch("local favorites")} className="ml-2 text-[10px] underline decoration-dotted text-zinc-500 hover:text-white">CLEAR</button>
+             </div>
+         )}
       </header>
 
       <main className="flex-1 flex relative overflow-hidden z-10">
@@ -230,6 +283,8 @@ const App: React.FC = () => {
                     onClick={() => handlers.handleSelectBusiness(biz.id)} 
                     onSpeak={handlers.handleSpeak} 
                     onHover={setHoveredBusinessId}
+                    isInComparison={comparisonList.some(b => b.id === biz.id)}
+                    onToggleComparison={handlers.toggleComparison}
                   />
               ))}
               

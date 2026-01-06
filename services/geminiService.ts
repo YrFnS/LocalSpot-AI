@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Modality } from "@google/genai";
-import { Business, Coordinates, WeatherState } from "../types";
+import { Business, Coordinates, WeatherState, ComparisonResult } from "../types";
 import { decodeBase64, decodeAudioData, getAudioContext } from "../utils/audioUtils";
 import { mapAiResponseToBusiness } from "../utils/mapper";
 import { getWeatherDescription } from "../services/weatherService";
@@ -51,6 +51,82 @@ export const getAiSuggestions = async (
         return JSON.parse(response.text || "[]");
     } catch (e) {
         return ["Best coffee nearby", "Lunch spots", "Parks", "Dinner dates", "Cocktail bars"];
+    }
+};
+
+export const analyzeImageAndSearch = async (
+    base64Image: string,
+    userLocation: Coordinates | null,
+    weather?: WeatherState
+): Promise<{ text: string; businesses: Business[]; analysis: string }> => {
+    try {
+        // 1. Analyze Image using Gemini 2.5 Flash (Multimodal)
+        const visionResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: {
+                parts: [
+                    { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
+                    { text: "Analyze this image. Describe the 'vibe', interior style, or food type in 1 short sentence. Then, generate a specific search query to find LOCAL places that match this aesthetic or serve this item. Format: JSON { \"analysis\": \"...\", \"query\": \"...\" }" }
+                ]
+            },
+            config: {
+                responseMimeType: 'application/json'
+            }
+        });
+
+        const visionData = JSON.parse(visionResponse.text || "{}");
+        const query = visionData.query || "cool places like this";
+        const analysis = visionData.analysis || "Visual match found.";
+
+        // 2. Perform Grounded Search with the generated query
+        const searchResult = await searchLocalBusinesses(query, userLocation, weather);
+        
+        return {
+            ...searchResult,
+            analysis
+        };
+    } catch (error) {
+        console.error("Vision Search Error", error);
+        return { text: "Visual analysis failed.", businesses: [], analysis: "Error analyzing image." };
+    }
+};
+
+export const compareBusinesses = async (b1: Business, b2: Business): Promise<ComparisonResult | null> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `
+                Compare these two businesses based on their data.
+                
+                Business A: ${JSON.stringify(b1)}
+                Business B: ${JSON.stringify(b2)}
+                
+                Task: Create a "Fight Card" style comparison.
+                1. Pick a short, punchy Headline for the battle (e.g., "The Coffee Clash", "Date Night Duel").
+                2. Write a 1-sentence Summary of the main trade-off.
+                3. Compare 3 aspects (e.g., Vibe, Value, Social). Declare a winnerId for each (or null if tie).
+                4. Declare an overall winnerId based on general appeal, and give a reason.
+                
+                Response JSON Schema:
+                {
+                    "headline": "string",
+                    "summary": "string",
+                    "winnerId": "string | null",
+                    "winnerReason": "string",
+                    "aspects": [
+                        { "name": "string", "winnerId": "string | null", "description": "string" }
+                    ]
+                }
+            `,
+            config: {
+                responseMimeType: 'application/json'
+            }
+        });
+        
+        return JSON.parse(response.text || "null");
+    } catch (error) {
+        console.error("Comparison Error", error);
+        return null;
     }
 };
 

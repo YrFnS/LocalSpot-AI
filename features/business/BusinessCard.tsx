@@ -10,6 +10,10 @@ interface BusinessCardProps {
   isFavorite: boolean;
   onToggleFavorite: (b: Business) => void;
   onHover: (id: string | null) => void;
+  
+  // New props for Comparison
+  isInComparison?: boolean;
+  onToggleComparison?: (b: Business) => void;
 }
 
 export const BusinessCard: React.FC<BusinessCardProps> = ({ 
@@ -19,7 +23,9 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
     onSpeak,
     isFavorite,
     onToggleFavorite,
-    onHover
+    onHover,
+    isInComparison,
+    onToggleComparison
 }) => {
   return (
     <div 
@@ -78,17 +84,31 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
             </button>
          </div>
 
-         <button
-            onClick={(e) => {
-                e.stopPropagation();
-                onToggleFavorite(business);
-            }}
-            className={`p-2 rounded-full transition-colors ${isFavorite ? 'text-red-500 bg-red-500/10' : 'text-zinc-600 hover:text-red-400'}`}
-         >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-         </button>
+         <div className="flex gap-2">
+            {onToggleComparison && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleComparison(business);
+                    }}
+                    className={`p-2 rounded-full transition-colors ${isInComparison ? 'text-primary bg-primary/10' : 'text-zinc-600 hover:text-primary'}`}
+                    title={isInComparison ? "Remove from Compare" : "Add to Compare"}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v18"/><path d="M3 12h18"/></svg>
+                </button>
+            )}
+             <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleFavorite(business);
+                }}
+                className={`p-2 rounded-full transition-colors ${isFavorite ? 'text-red-500 bg-red-500/10' : 'text-zinc-600 hover:text-red-400'}`}
+             >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+             </button>
+         </div>
       </div>
     </div>
   );

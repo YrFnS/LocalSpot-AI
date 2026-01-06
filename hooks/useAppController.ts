@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Business, SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition } from '../types';
-import { searchLocalBusinesses, getFeaturedBusinesses, speakDescription, getAiSuggestions } from '../services/geminiService';
+import { Business, SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, ComparisonResult } from '../types';
+import { searchLocalBusinesses, getFeaturedBusinesses, speakDescription, getAiSuggestions, analyzeImageAndSearch, compareBusinesses } from '../services/geminiService';
 import { getRandomWeather } from '../services/weatherService';
 import { useGeolocation } from './useGeolocation';
 import { useFavorites } from './useFavorites';
@@ -26,14 +26,24 @@ export const useAppController = () => {
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
     const [themeClass, setThemeClass] = useState(THEMES.default);
+    
+    // UI States
     const [isOracleOpen, setIsOracleOpen] = useState(false);
     const [isCuratorOpen, setIsCuratorOpen] = useState(false);
+    const [isVisionOpen, setIsVisionOpen] = useState(false); 
+    const [isVisionAnalyzing, setIsVisionAnalyzing] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+
+    // Comparisons State
+    const [comparisonList, setComparisonList] = useState<Business[]>([]);
+    const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
+    const [isComparing, setIsComparing] = useState(false);
+
     const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+    const [aiAnalysisResult, setAiAnalysisResult] = useState<string | null>(null); 
     
-    // New Global Hover State
     const [hoveredBusinessId, setHoveredBusinessId] = useState<string | null>(null);
     
-    // Context State
     const [weather, setWeather] = useState<WeatherState>(getRandomWeather());
 
     const [filters, setFilters] = useState<FilterState>({
@@ -43,22 +53,19 @@ export const useAppController = () => {
         sortBy: SortOption.RELEVANCE
     });
     
-    const [showDetailModal, setShowDetailModal] = useState(false);
 
     // Initial Data Fetch
     useEffect(() => {
         if (userLocation) {
             setState(s => ({ ...s, userLocation }));
-            // Only fetch if empty results and not simulated weather change
             if (state.results.length === 0 && !state.isSearching) {
-                getFeaturedBusinesses(userLocation) // Featured doesn't strictly need weather, but underlying search can use it if updated
+                getFeaturedBusinesses(userLocation)
                     .then(featured => setState(s => ({ ...s, results: featured })))
                     .catch(console.error);
             }
         }
     }, [userLocation]);
 
-    // Update suggestions when context changes
     useEffect(() => {
         if (userLocation) {
              getAiSuggestions(userLocation, weather)
@@ -72,12 +79,30 @@ export const useAppController = () => {
         setState(s => ({ ...s, isSearching: true, query, error: null, selectedBusinessId: null }));
         setShowDetailModal(false);
         setThemeClass(getThemeForQuery(query));
+        setAiAnalysisResult(null); 
         
         try {
             const { businesses } = await searchLocalBusinesses(query, state.userLocation, weather);
             setState(s => ({ ...s, results: businesses, isSearching: false }));
         } catch (error) {
             setState(s => ({ ...s, isSearching: false, error: 'Connection failed.' }));
+        }
+    }, [state.userLocation, weather]);
+
+    const handleVisionAnalyze = useCallback(async (base64Image: string) => {
+        setIsVisionAnalyzing(true);
+        try {
+            const result = await analyzeImageAndSearch(base64Image, state.userLocation, weather);
+            setIsVisionOpen(false);
+            setActiveTab(Tab.SEARCH);
+            setState(s => ({ ...s, results: result.businesses, isSearching: false, query: "Visual Search Match" }));
+            setAiAnalysisResult(result.analysis);
+            setThemeClass(THEMES.default); 
+
+        } catch (e) {
+            setState(s => ({ ...s, error: 'Visual Analysis Failed' }));
+        } finally {
+            setIsVisionAnalyzing(false);
         }
     }, [state.userLocation, weather]);
 
@@ -103,8 +128,33 @@ export const useAppController = () => {
 
     const handleWeatherToggle = (condition: WeatherCondition) => {
         setWeather(prev => ({ ...prev, condition }));
-        // Optional: Auto-trigger rescan if desired, or let user do it.
-        // Let's prompt user or just update suggestions.
+    };
+
+    // --- Comparison Handlers ---
+    const toggleComparison = (business: Business) => {
+        setComparisonList(prev => {
+            const exists = prev.find(b => b.id === business.id);
+            if (exists) {
+                return prev.filter(b => b.id !== business.id);
+            }
+            if (prev.length >= 2) {
+                // Replace the oldest
+                return [prev[1], business];
+            }
+            return [...prev, business];
+        });
+    };
+
+    const removeFromComparison = (id: string) => {
+        setComparisonList(prev => prev.filter(b => b.id !== id));
+    };
+
+    const runComparison = async () => {
+        if (comparisonList.length < 2) return;
+        setIsComparing(true);
+        const result = await compareBusinesses(comparisonList[0], comparisonList[1]);
+        setComparisonResult(result);
+        setIsComparing(false);
     };
 
     // Computed Data
@@ -138,7 +188,12 @@ export const useAppController = () => {
         setIsOracleOpen,
         isCuratorOpen,
         setIsCuratorOpen,
+        isVisionOpen,
+        setIsVisionOpen,
+        isVisionAnalyzing,
+        handleVisionAnalyze,
         aiSuggestions,
+        aiAnalysisResult,
         filters,
         setFilters,
         showDetailModal,
@@ -151,6 +206,10 @@ export const useAppController = () => {
         hoveredBusinessId,
         setHoveredBusinessId,
         weather,
+        comparisonList,
+        comparisonResult,
+        isComparing,
+        setComparisonResult,
         handlers: {
             handleSearch,
             handleSpeak,
@@ -163,7 +222,10 @@ export const useAppController = () => {
             addTag,
             removeTag,
             getSelectedBusiness,
-            handleWeatherToggle
+            handleWeatherToggle,
+            toggleComparison,
+            removeFromComparison,
+            runComparison
         }
     };
 };

@@ -1,12 +1,14 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
   isSearching: boolean;
   suggestions: string[];
+  onOpenVision?: () => void;
 }
 
-export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, suggestions }) => {
+export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, suggestions, onOpenVision }) => {
   const [query, setQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -135,6 +137,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, sug
             className="w-full bg-transparent text-white px-3 py-3 outline-none placeholder:text-zinc-600 font-mono text-xs md:text-sm tracking-wide"
         />
         
+        {/* Vision Lens Button */}
+        <button
+            type="button"
+            onClick={onOpenVision}
+            className="p-3 transition-colors text-zinc-500 hover:text-white hover:bg-zinc-900 border-l border-zinc-800"
+            title="Gemini Lens"
+        >
+             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
+        </button>
+
         <button
             type="button"
             onClick={toggleVoice}

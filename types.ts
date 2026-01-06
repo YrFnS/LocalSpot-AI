@@ -121,3 +121,17 @@ export interface WeatherState {
     temperature: number;
     isSimulated: boolean;
 }
+
+export interface ComparisonAspect {
+    name: string;
+    winnerId: string | null; // null for tie
+    description: string;
+}
+
+export interface ComparisonResult {
+    headline: string;
+    summary: string;
+    winnerId: string | null;
+    winnerReason: string;
+    aspects: ComparisonAspect[];
+}
