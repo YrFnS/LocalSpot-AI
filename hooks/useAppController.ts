@@ -1,12 +1,13 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Business, SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, ComparisonResult, VibeState } from '../types';
+import { SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, VibeState } from '../types';
 import { searchLocalBusinesses, getFeaturedBusinesses } from '../services/searchService';
-import { getAiSuggestions, analyzeImageAndSearch, compareBusinesses, generateVibeQuery } from '../services/insightService';
+import { getAiSuggestions, analyzeImageAndSearch, generateVibeQuery } from '../services/insightService';
 import { speakDescription } from '../services/audioGenService';
 import { getRandomWeather } from '../services/weatherService';
 import { useGeolocation } from './useGeolocation';
 import { useFavorites } from './useFavorites';
+import { useComparison } from './useComparison';
 import { getThemeForQuery, THEMES } from '../utils/themeUtils';
 import { filterBusinesses } from '../utils/filterUtils';
 
@@ -22,6 +23,15 @@ export const useAppController = () => {
 
     const { location: userLocation } = useGeolocation();
     const { favorites, toggleFavorite, isFavorite, updateNote, addTag, removeTag, getFavorite } = useFavorites();
+    const { 
+        comparisonList, 
+        comparisonResult, 
+        isComparing, 
+        setComparisonResult, 
+        toggleComparison, 
+        removeFromComparison, 
+        runComparison 
+    } = useComparison();
 
     const [activeTab, setActiveTab] = useState<Tab>(Tab.SEARCH);
     const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.LIST);
@@ -41,11 +51,6 @@ export const useAppController = () => {
 
     const [showDetailModal, setShowDetailModal] = useState(false);
 
-    // Comparisons State
-    const [comparisonList, setComparisonList] = useState<Business[]>([]);
-    const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
-    const [isComparing, setIsComparing] = useState(false);
-
     const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
     const [aiAnalysisResult, setAiAnalysisResult] = useState<string | null>(null); 
     
@@ -59,7 +64,6 @@ export const useAppController = () => {
         onlyOpen: false,
         sortBy: SortOption.RELEVANCE
     });
-    
 
     // Initial Data Fetch
     useEffect(() => {
@@ -148,33 +152,6 @@ export const useAppController = () => {
 
     const handleWeatherToggle = (condition: WeatherCondition) => {
         setWeather(prev => ({ ...prev, condition }));
-    };
-
-    // --- Comparison Handlers ---
-    const toggleComparison = (business: Business) => {
-        setComparisonList(prev => {
-            const exists = prev.find(b => b.id === business.id);
-            if (exists) {
-                return prev.filter(b => b.id !== business.id);
-            }
-            if (prev.length >= 2) {
-                // Replace the oldest
-                return [prev[1], business];
-            }
-            return [...prev, business];
-        });
-    };
-
-    const removeFromComparison = (id: string) => {
-        setComparisonList(prev => prev.filter(b => b.id !== id));
-    };
-
-    const runComparison = async () => {
-        if (comparisonList.length < 2) return;
-        setIsComparing(true);
-        const result = await compareBusinesses(comparisonList[0], comparisonList[1]);
-        setComparisonResult(result);
-        setIsComparing(false);
     };
 
     // Computed Data
