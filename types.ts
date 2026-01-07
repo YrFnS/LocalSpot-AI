@@ -9,6 +9,13 @@ export interface BookingSlot {
   available: boolean;
 }
 
+export interface MenuItem {
+  name: string;
+  price: string;
+  description: string;
+  tags?: string[]; // e.g. "Spicy", "Vegan", "Signature"
+}
+
 export interface Business {
   id: string;
   name: string;
@@ -51,6 +58,14 @@ export interface Business {
   hours?: string;
   matchScore?: number; // 0-100 Relevance Score
   
+  // Intelligent Crowd Analytics
+  crowdLevel?: number; // 0-100
+  waitEstimate?: number; // minutes
+  trendingTrend?: 'UP' | 'DOWN' | 'STABLE';
+  
+  // Inventory / Menu Recon
+  menuItems?: MenuItem[];
+
   // Booking Data
   bookingAvailable?: boolean;
   slots?: BookingSlot[];

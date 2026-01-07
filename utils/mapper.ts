@@ -25,6 +25,9 @@ export const mapAiResponseToBusiness = (
         }];
     }
 
+    // Infer trend based on crowd level (fake logic for demo)
+    const trend = (item.crowdLevel || 50) > 75 ? 'UP' : ((item.crowdLevel || 50) < 30 ? 'DOWN' : 'STABLE');
+
     return {
         id: `biz-${index}-${Date.now()}`,
         name: item.name,
@@ -42,7 +45,11 @@ export const mapAiResponseToBusiness = (
         verified: Math.random() > 0.8,
         phoneNumber: "(555) Local-01",
         hours: "10:00 AM - 10:00 PM",
-        matchScore: item.matchScore || Math.floor(Math.random() * 40) + 60, // Fallback random score
+        matchScore: item.matchScore || Math.floor(Math.random() * 40) + 60,
+        crowdLevel: item.crowdLevel || Math.floor(Math.random() * 100),
+        waitEstimate: item.waitEstimate || 0,
+        trendingTrend: trend,
+        menuItems: item.menuItems || [],
         bookingAvailable: item.slots && item.slots.length > 0,
         slots: item.slots,
         photos: photos,

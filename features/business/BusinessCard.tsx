@@ -33,6 +33,13 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
   else if (score >= 75) { matchColor = 'text-green-500'; matchBorder = 'border-green-500'; }
   else if (score >= 50) { matchColor = 'text-yellow-500'; matchBorder = 'border-yellow-500'; }
 
+  // Crowd Density Logic
+  const crowd = business.crowdLevel || 0;
+  let crowdColor = 'bg-green-500';
+  let crowdLabel = 'LOW';
+  if (crowd > 80) { crowdColor = 'bg-red-500'; crowdLabel = 'CRIT'; }
+  else if (crowd > 50) { crowdColor = 'bg-yellow-500'; crowdLabel = 'MED'; }
+
   return (
     <div 
       onClick={onClick}
@@ -62,6 +69,11 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
                     />
                     {/* Scanlines */}
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0)_50%,rgba(0,0,0,0.4)_50%)] bg-[length:100%_4px] pointer-events-none"></div>
+                    
+                    {/* Crowd Density Overlay (Mini) */}
+                    <div className="absolute bottom-1 left-1 right-1 h-1 bg-black/50 overflow-hidden rounded-full">
+                         <div className={`h-full ${crowdColor}`} style={{ width: `${crowd}%` }}></div>
+                    </div>
                 </div>
             ) : (
                 <div className="w-full h-full bg-zinc-900 flex flex-col items-center justify-center border-r border-zinc-800">
@@ -71,7 +83,7 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
             )}
             
             {/* Rating Signal Strength */}
-            <div className="absolute bottom-0 left-0 right-0 bg-black/90 p-1 flex justify-between items-center border-t border-zinc-800">
+            <div className="absolute top-0 left-0 right-0 bg-black/80 p-1 flex justify-between items-center border-b border-zinc-800/50">
                 <span className={`font-mono text-[9px] font-bold ${business.rating && business.rating >= 4.5 ? 'text-primary' : 'text-zinc-400'}`}>
                     {business.rating?.toFixed(1) || '--'}
                 </span>
@@ -108,12 +120,10 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
                     <span className="text-[9px] font-mono text-primary bg-primary/10 px-1 border border-primary/20 uppercase">
                         {business.types?.[0] || 'UNKNOWN_ENTITY'}
                     </span>
-                    {business.distanceMeters && (
-                        <span className="text-[9px] font-mono text-zinc-500 flex items-center gap-1">
-                             <span className="w-1 h-1 bg-zinc-600 rounded-full"></span>
-                             DST: {(business.distanceMeters / 1000).toFixed(2)}KM
-                        </span>
-                    )}
+                    <span className="text-[9px] font-mono text-zinc-500 flex items-center gap-1">
+                         <span className={`w-1.5 h-1.5 rounded-full ${crowdColor}`}></span>
+                         {crowdLabel}_DENSITY
+                    </span>
                     {business.priceLevel && (
                         <span className="text-[9px] font-mono text-zinc-500 bg-zinc-950 px-1.5 border border-zinc-800">{business.priceLevel}</span>
                     )}

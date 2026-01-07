@@ -7,6 +7,7 @@ import { UserAnnotations } from './UserAnnotations';
 import { PhotoGallery } from './PhotoGallery';
 import { ReviewList } from './ReviewList';
 import { EavesdropPlayer } from './EavesdropPlayer';
+import { MenuRecon } from './MenuRecon';
 
 interface BusinessDetailModalProps {
   business: Business;
@@ -45,6 +46,8 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
   const handleBook = (slot: BookingSlot, guests: number) => {
       console.log("Booked", slot, guests);
   };
+
+  const crowdLevel = business.crowdLevel || 50;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-6 bg-black/95 backdrop-blur-md animate-in fade-in duration-300">
@@ -104,6 +107,50 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto custom-scrollbar space-y-6">
+                 {/* Live Crowd Meter */}
+                 <div className="bg-zinc-900/50 border border-zinc-800 p-4">
+                      <div className="flex justify-between items-center mb-3">
+                          <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${crowdLevel > 75 ? 'bg-red-500 animate-ping' : 'bg-green-500'}`}></span>
+                              LIVE_OCCUPANCY
+                          </span>
+                          <span className="text-[10px] font-mono text-zinc-300">
+                              {crowdLevel}% CAPACITY
+                          </span>
+                      </div>
+                      
+                      {/* Bar Graph */}
+                      <div className="h-12 flex items-end gap-1 mb-2 border-b border-zinc-800 pb-1">
+                          {[...Array(20)].map((_, i) => {
+                              const height = Math.random() * 50 + 20;
+                              // Highlight "current" time
+                              const isCurrent = i === 15;
+                              return (
+                                  <div key={i} className="flex-1 bg-zinc-800/50 relative group/bar">
+                                      <div 
+                                        className={`absolute bottom-0 w-full transition-all duration-1000 ${isCurrent ? 'bg-primary animate-pulse' : 'bg-zinc-700'}`}
+                                        style={{ height: `${isCurrent ? crowdLevel : height}%` }}
+                                      ></div>
+                                  </div>
+                              );
+                          })}
+                      </div>
+                      
+                      <div className="flex justify-between text-[9px] font-mono text-zinc-600">
+                          <span>12PM</span>
+                          <span className="text-primary">NOW</span>
+                          <span>12AM</span>
+                      </div>
+                      
+                      {business.waitEstimate !== undefined && business.waitEstimate > 0 && (
+                          <div className="mt-2 text-right">
+                              <span className="text-[9px] font-mono text-primary uppercase tracking-wider">
+                                  EST. WAIT: {business.waitEstimate} MIN
+                              </span>
+                          </div>
+                      )}
+                 </div>
+
                  {/* Stats Grid */}
                  <div className="grid grid-cols-3 gap-px bg-zinc-800 border border-zinc-800">
                     <div className="bg-[#09090b] p-3 text-center group hover:bg-zinc-900 transition-colors">
@@ -236,6 +283,11 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                      </div>
 
                      <div className="space-y-8">
+                         {/* Inventory / Menu Recon */}
+                         {business.menuItems && business.menuItems.length > 0 && (
+                            <MenuRecon items={business.menuItems} />
+                         )}
+
                          {/* Concierge Terminal */}
                          <BusinessConcierge business={business} />
 

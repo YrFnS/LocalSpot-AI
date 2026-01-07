@@ -34,7 +34,6 @@ export const searchLocalBusinesses = async (
     const weatherContext = weather ? getWeatherDescription(weather) : "Unknown";
 
     // STEP 1: Grounded Search
-    // We explicitly ask for Markdown format with images to encourage the model to output photo URLs
     const contextualQuery = `${query} (Context: ${timeContext}, ${weatherContext})`;
 
     const groundResponse = await ai.models.generateContent({
@@ -68,7 +67,9 @@ export const searchLocalBusinesses = async (
         2. Infer a short "Vibe" (e.g., "Cozy", "Industrial").
         3. Calculate a "matchScore" (0-100) based on how well this place fits the User's Query and current Weather/Time context.
         4. If the source text contains an image URL (often in markdown ![alt](url)), extract it to 'photoUri'.
-        5. If the place is a Restaurant/Bar/Cafe, GENERATE 'slots' based on likely busyness.
+        5. ESTIMATE "crowdLevel" (0-100) and "waitEstimate" (minutes) based on the business type and current time.
+        6. GENERATE 3-5 'menuItems' (signature dishes/drinks/activities) with name, price (approx), and short description.
+        7. If the place is a Restaurant/Bar/Cafe, GENERATE 'slots' based on likely busyness.
         
         SCHEMA:
         Array<{
@@ -86,6 +87,9 @@ export const searchLocalBusinesses = async (
             openNow: boolean,
             matchScore: number,
             photoUri: string,
+            crowdLevel: number,
+            waitEstimate: number,
+            menuItems: Array<{name: string, price: string, description: string, tags: string[]}>,
             slots: Array<{time: string, available: boolean}>, 
             reviews: Array<{user: string, text: string, rating: number}>
         }>
