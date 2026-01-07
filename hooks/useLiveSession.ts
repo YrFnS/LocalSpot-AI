@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, FunctionDeclaration, Type } from "@google/genai";
 import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32 } from '../utils/audioStreamUtils';
@@ -41,8 +42,7 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
     try {
       // 1. Setup Audio Context
       audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)({
-        sampleRate: 16000, // Gemini prefers 16kHz for input, but we might resample. 
-                           // Actually the model accepts 16kHz PCM.
+        sampleRate: 16000, // Gemini prefers 16kHz for input
       });
 
       // 2. Get Microphone Stream
@@ -50,13 +50,13 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
       streamRef.current = stream;
 
       // 3. Connect to Gemini Live
-      // Note: We use the specific model for Live
+      // Using the specific model for real-time audio/video conversation tasks
       const sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        model: 'gemini-2.5-flash-native-audio-preview-12-2025',
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } }, // Zephyr, Puck, Kore
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } }, // Zephyr, Puck, Kore, Fenrir, Charon
           },
           tools: [{ functionDeclarations: [searchTool] }],
           systemInstruction: `You are "The Oracle", the voice of LocalSpot. 
@@ -90,6 +90,7 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
               const pcm16 = floatTo16BitPCM(inputData);
               const base64 = arrayBufferToBase64(pcm16);
               
+              // Ensure we use the resolved session
               sessionPromise.then(session => {
                   session.sendRealtimeInput({
                       media: {
@@ -118,7 +119,7 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
                                 functionResponses: [{
                                     id: fc.id,
                                     name: fc.name,
-                                    response: { result: "Map updated successfully. 5 results found." } // Simplified for now
+                                    response: { result: "Map updated successfully. 5 results found." } 
                                 }]
                             });
                         });
@@ -174,10 +175,6 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
       const start = Math.max(now, nextStartTime.current);
       source.start(start);
       nextStartTime.current = start + buffer.duration;
-      
-      // Simple visualizer hook for output
-      // Note: Real output visualization requires an AnalyserNode connected to source
-      // For this demo, we simulate volume during 'isSpeaking'
   };
 
   const disconnect = () => {
@@ -193,9 +190,6 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
      if (audioContext.current) {
          audioContext.current.close();
      }
-     // Can't explicitly close the session object easily in current SDK version without storing the result of connect
-     // But closing websocket (if exposed) or refreshing handles it.
-     // In a real implementation we would call session.close() if available.
      setIsConnected(false);
      setIsSpeaking(false);
      setVolume(0);

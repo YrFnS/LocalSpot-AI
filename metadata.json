@@ -1,6 +1,6 @@
 {
   "name": "LocalSpot AI",
-  "description": "AI-powered local discovery engine with voice interaction and spatial visualization.",
+  "description": "LocalSpot revolutionizes local business discovery by combining AI-powered search, voice interactions, and intelligent insights.",
   "requestFramePermissions": [
     "microphone",
     "geolocation"
