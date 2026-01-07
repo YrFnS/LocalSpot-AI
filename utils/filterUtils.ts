@@ -27,6 +27,8 @@ export const filterBusinesses = (businesses: Business[], filters: FilterState): 
   // 2. Sort
   return filtered.sort((a, b) => {
     switch (filters.sortBy) {
+        case SortOption.MATCH:
+            return (b.matchScore || 0) - (a.matchScore || 0);
         case SortOption.RATING:
             return (b.rating || 0) - (a.rating || 0);
         case SortOption.DISTANCE:

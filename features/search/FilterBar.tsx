@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { FilterState, SortOption } from '../../types';
+import { useSoundFX } from '../../hooks/useSoundFX';
 
 interface FilterBarProps {
   filters: FilterState;
@@ -8,12 +9,35 @@ interface FilterBarProps {
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
+  const { playClick, playHover } = useSoundFX();
+
   const togglePrice = (price: string) => {
+    playClick();
     const current = filters.priceLevels;
     const next = current.includes(price) 
       ? current.filter(p => p !== price)
       : [...current, price];
     onChange({ ...filters, priceLevels: next });
+  };
+
+  const handleRatingChange = (r: number) => {
+      playClick();
+      onChange({ ...filters, minRating: filters.minRating === r ? 0 : r });
+  };
+
+  const handleOpenToggle = () => {
+      playClick();
+      onChange({ ...filters, onlyOpen: !filters.onlyOpen });
+  };
+
+  const handleSortChange = (opt: SortOption) => {
+      playClick();
+      onChange({ ...filters, sortBy: opt });
+  };
+
+  const handleReset = () => {
+      playClick();
+      onChange({ minRating: 0, priceLevels: [], onlyOpen: false, sortBy: SortOption.RELEVANCE });
   };
 
   const ratings = [3.5, 4.0, 4.5];
@@ -31,6 +55,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
                      <button
                         key={price}
                         onClick={() => togglePrice(price)}
+                        onMouseEnter={playHover}
                         className={`
                            relative w-8 h-6 text-[9px] font-mono font-bold transition-all flex items-center justify-center
                            ${isActive ? 'text-black' : 'text-zinc-600 hover:text-zinc-400'}
@@ -50,7 +75,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
        <div className="flex flex-col gap-1 shrink-0">
            <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">STATUS_FILTER</span>
            <button
-              onClick={() => onChange({ ...filters, onlyOpen: !filters.onlyOpen })}
+              onClick={handleOpenToggle}
+              onMouseEnter={playHover}
               className={`
                  relative h-7 w-24 border rounded-full transition-all flex items-center px-1
                  ${filters.onlyOpen 
@@ -80,7 +106,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
                    return (
                        <button
                             key={r}
-                            onClick={() => onChange({ ...filters, minRating: isActive ? 0 : r })}
+                            onClick={() => handleRatingChange(r)}
+                            onMouseEnter={playHover}
                             className={`
                                 w-6 transition-all relative group
                                 ${isActive ? 'h-full bg-primary shadow-[0_0_10px_rgba(249,115,22,0.6)]' : (isPast ? 'h-full bg-primary/40' : 'h-1/2 bg-zinc-800 hover:bg-zinc-700')}
@@ -101,10 +128,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
        <div className="flex flex-col gap-1 shrink-0">
             <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">SORT_SEQUENCE</span>
             <div className="flex bg-zinc-900 border border-zinc-800 p-0.5 gap-0.5">
-                {[SortOption.RELEVANCE, SortOption.RATING, SortOption.DISTANCE].map(opt => (
+                {[SortOption.MATCH, SortOption.RELEVANCE, SortOption.RATING, SortOption.DISTANCE].map(opt => (
                     <button
                         key={opt}
-                        onClick={() => onChange({ ...filters, sortBy: opt })}
+                        onClick={() => handleSortChange(opt)}
+                        onMouseEnter={playHover}
                         className={`
                             px-3 py-1 text-[9px] font-mono uppercase transition-all
                             ${filters.sortBy === opt 
@@ -112,7 +140,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
                                 : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 border-b-2 border-transparent'}
                         `}
                     >
-                        {opt === SortOption.RELEVANCE ? 'REL' : (opt === SortOption.RATING ? 'RAT' : 'DIST')}
+                        {opt === SortOption.MATCH ? 'MATCH' : (opt === SortOption.RELEVANCE ? 'REL' : (opt === SortOption.RATING ? 'RAT' : 'DIST'))}
                     </button>
                 ))}
             </div>
@@ -121,7 +149,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
        {/* Reset Button */}
        {(filters.minRating > 0 || filters.priceLevels.length > 0 || filters.onlyOpen || filters.sortBy !== SortOption.RELEVANCE) && (
            <button 
-             onClick={() => onChange({ minRating: 0, priceLevels: [], onlyOpen: false, sortBy: SortOption.RELEVANCE })}
+             onClick={handleReset}
+             onMouseEnter={playHover}
              className="ml-auto px-3 py-1 bg-red-950/30 border border-red-900/50 text-red-500 hover:bg-red-900/50 hover:text-red-300 text-[9px] font-mono uppercase tracking-widest transition-all"
            >
              RESET_PARAMS

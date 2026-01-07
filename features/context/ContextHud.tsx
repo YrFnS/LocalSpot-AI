@@ -12,6 +12,7 @@ interface ContextHudProps {
 export const ContextHud: React.FC<ContextHudProps> = ({ weather, onWeatherToggle, locationName = "San Francisco, CA" }) => {
   const [time, setTime] = useState(new Date());
   const [netStatus, setNetStatus] = useState(true);
+  const [intelMessage, setIntelMessage] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -22,6 +23,20 @@ export const ContextHud: React.FC<ContextHudProps> = ({ weather, onWeatherToggle
         clearInterval(netTimer);
     };
   }, []);
+
+  // Update Intel Message based on Weather/Time
+  useEffect(() => {
+      const hour = time.getHours();
+      let msg = "";
+
+      if (weather.condition === 'Rainy') msg = "PRECIPITATION DETECTED // ADVISING INDOOR PROTOCOLS";
+      else if (weather.condition === 'Foggy') msg = "VISIBILITY LOW // SCANNING FOR COZY SHELTERS";
+      else if (hour > 22 || hour < 5) msg = "NIGHT OPS ACTIVE // LATE NIGHT VENUES HIGHLIGHTED";
+      else if (hour >= 5 && hour < 11) msg = "MORNING SEQUENCE // COFFEE UPLINK READY";
+      else msg = "CONDITIONS OPTIMAL // EXPLORATION ADVISED";
+
+      setIntelMessage(msg);
+  }, [weather, time]);
 
   const conditions: WeatherCondition[] = ['Sunny', 'Rainy', 'Cloudy', 'Foggy', 'Night'];
 
@@ -54,20 +69,20 @@ export const ContextHud: React.FC<ContextHudProps> = ({ weather, onWeatherToggle
         </div>
 
         {/* Location Module - Marquee effect on hover? */}
-        <div className="hidden md:flex flex-col justify-center px-4 border-r border-zinc-800/50 max-w-[200px] relative">
+        <div className="hidden md:flex flex-col justify-center px-4 border-r border-zinc-800/50 max-w-[200px] relative group/loc">
              <span className="font-bold text-zinc-400 uppercase truncate">
                 {locationName}
              </span>
-             <span className="text-zinc-600 uppercase text-[8px] leading-none mt-1 flex justify-between">
+             <span className="text-zinc-600 uppercase text-[8px] leading-none mt-1 flex justify-between w-full">
                 <span>SECTOR_07</span>
-                <span className="text-primary">GPS_LOCKED</span>
+                <span className="text-primary group-hover/loc:animate-pulse">GPS_LOCKED</span>
              </span>
         </div>
 
         {/* Weather Module - Interactive */}
         <button 
             onClick={cycleWeather}
-            className="flex items-center gap-3 px-4 hover:bg-zinc-800/50 transition-colors relative"
+            className="flex items-center gap-3 px-4 hover:bg-zinc-800/50 transition-colors relative border-r border-zinc-800/50"
             title="Cycle Environment Simulation"
         >
             <span className="text-lg filter drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]">
@@ -85,6 +100,16 @@ export const ContextHud: React.FC<ContextHudProps> = ({ weather, onWeatherToggle
             {/* Interactive hint */}
             <div className="absolute bottom-0 left-0 w-full h-[2px] bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
         </button>
+
+        {/* Intel Ticker */}
+        <div className="flex-1 hidden lg:flex items-center px-4 overflow-hidden relative">
+            <div className="whitespace-nowrap animate-[marquee_15s_linear_infinite] text-primary/70 uppercase">
+                {intelMessage}
+            </div>
+            {/* Fade edges */}
+            <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/20 to-transparent"></div>
+            <div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-black/20 to-transparent"></div>
+        </div>
     </div>
   );
 };

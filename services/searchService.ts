@@ -34,16 +34,17 @@ export const searchLocalBusinesses = async (
     const weatherContext = weather ? getWeatherDescription(weather) : "Unknown";
 
     // STEP 1: Grounded Search
+    // We explicitly ask for Markdown format with images to encourage the model to output photo URLs
     const contextualQuery = `${query} (Context: ${timeContext}, ${weatherContext})`;
 
     const groundResponse = await ai.models.generateContent({
       model: groundModel,
       contents: `Find at least 20 distinct businesses for "${contextualQuery}" near ${userLocation ? `${userLocation.latitude},${userLocation.longitude}` : 'me'}. 
-      Include address, rating, review count, and open status.`,
+      Return a list including address, rating, review count, open status, and A PHOTO/IMAGE for each place if available (in Markdown format).`,
       config: {
         tools: [{ googleMaps: {} }],
         toolConfig: retrievalConfig ? { retrievalConfig } : undefined, 
-        systemInstruction: `Current Time: ${timeContext}. Weather: ${weatherContext}. Find REAL places. Prioritize density and variety suitable for this weather/time.`,
+        systemInstruction: `Current Time: ${timeContext}. Weather: ${weatherContext}. Find REAL places. Prioritize density and variety. You MUST attempt to include an image/photo for every place found.`,
       },
     });
 
@@ -60,11 +61,14 @@ export const searchLocalBusinesses = async (
         User Location: ${userLocation?.latitude}, ${userLocation?.longitude}
         Current Time: ${timeContext}
         Weather: ${weatherContext}
+        Original Query: "${query}"
 
         TASK:
         1. Extract business details into JSON.
-        2. Infer a short "Vibe" (e.g., "Cozy", "Industrial") based on the place and current weather context.
-        3. If the place is a Restaurant/Bar/Cafe, GENERATE 'slots' (Array<{time: string, available: boolean}>) for the next few hours based on its likely busyness.
+        2. Infer a short "Vibe" (e.g., "Cozy", "Industrial").
+        3. Calculate a "matchScore" (0-100) based on how well this place fits the User's Query and current Weather/Time context.
+        4. If the source text contains an image URL (often in markdown ![alt](url)), extract it to 'photoUri'.
+        5. If the place is a Restaurant/Bar/Cafe, GENERATE 'slots' based on likely busyness.
         
         SCHEMA:
         Array<{
@@ -80,6 +84,8 @@ export const searchLocalBusinesses = async (
             vibe: string, 
             bestFor: string[],
             openNow: boolean,
+            matchScore: number,
+            photoUri: string,
             slots: Array<{time: string, available: boolean}>, 
             reviews: Array<{user: string, text: string, rating: number}>
         }>

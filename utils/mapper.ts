@@ -1,3 +1,4 @@
+
 import { Business, Coordinates } from "../types";
 import { getPhotosForType } from "../services/imageService";
 import { calculateDistanceMeters } from "./geoUtils";
@@ -11,6 +12,18 @@ export const mapAiResponseToBusiness = (
     const lat = item.latitude || (userLocation?.latitude || 0) + (Math.random() * 0.01 - 0.005);
     const lng = item.longitude || (userLocation?.longitude || 0) + (Math.random() * 0.01 - 0.005);
     const bizLocation = { latitude: lat, longitude: lng };
+
+    // Use extracted photo if available, otherwise fallback to curated aesthetic photos
+    let photos = getPhotosForType(item.type || 'default');
+    
+    if (item.photoUri && typeof item.photoUri === 'string' && item.photoUri.startsWith('http')) {
+        photos = [{
+            name: item.photoUri,
+            widthPx: 800, 
+            heightPx: 600,
+            authorAttributions: []
+        }];
+    }
 
     return {
         id: `biz-${index}-${Date.now()}`,
@@ -29,9 +42,10 @@ export const mapAiResponseToBusiness = (
         verified: Math.random() > 0.8,
         phoneNumber: "(555) Local-01",
         hours: "10:00 AM - 10:00 PM",
+        matchScore: item.matchScore || Math.floor(Math.random() * 40) + 60, // Fallback random score
         bookingAvailable: item.slots && item.slots.length > 0,
         slots: item.slots,
-        photos: getPhotosForType(item.type || 'default'), 
+        photos: photos,
         reviews: item.reviews?.map((r: any) => ({
             authorAttribution: { displayName: r.user || 'Local Guide', photoUri: '' },
             text: { text: r.text, languageCode: 'en' },

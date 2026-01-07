@@ -9,6 +9,7 @@ interface CuratorPanelProps {
   availableBusinesses: Business[];
   onSelectBusiness: (id: string) => void;
   onPlotCourse?: (itinerary: Itinerary) => void;
+  onSaveMission?: (itinerary: Itinerary) => void;
 }
 
 const QUICK_VIBES = [
@@ -23,12 +24,14 @@ export const CuratorPanel: React.FC<CuratorPanelProps> = ({
     onClose, 
     availableBusinesses,
     onSelectBusiness,
-    onPlotCourse
+    onPlotCourse,
+    onSaveMission
 }) => {
   const [prompt, setPrompt] = useState('');
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
 
   // Simulated loading steps for effect
   useEffect(() => {
@@ -42,6 +45,11 @@ export const CuratorPanel: React.FC<CuratorPanelProps> = ({
     }
   }, [isGenerating]);
 
+  // Reset saved state when new itinerary generated
+  useEffect(() => {
+      setIsSaved(false);
+  }, [itinerary]);
+
   const handleGenerate = async (e?: React.FormEvent) => {
       if (e) e.preventDefault();
       if (!prompt.trim()) return;
@@ -51,6 +59,13 @@ export const CuratorPanel: React.FC<CuratorPanelProps> = ({
       const result = await generateItinerary(prompt, availableBusinesses);
       setItinerary(result);
       setIsGenerating(false);
+  };
+
+  const handleSave = () => {
+      if (itinerary && onSaveMission) {
+          onSaveMission(itinerary);
+          setIsSaved(true);
+      }
   };
 
   const handleQuickSelect = (vibe: string) => {
@@ -241,10 +256,16 @@ export const CuratorPanel: React.FC<CuratorPanelProps> = ({
                                     INITIATE ROUTE PROJECTION
                                  </button>
                              )}
-                             <button className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] font-mono font-bold uppercase tracking-[0.15em] transition-colors rounded-sm flex items-center justify-center gap-3 border border-zinc-700">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                                ARCHIVE PLAN
-                             </button>
+                             {onSaveMission && (
+                                 <button 
+                                    onClick={handleSave}
+                                    disabled={isSaved}
+                                    className={`w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] font-mono font-bold uppercase tracking-[0.15em] transition-colors rounded-sm flex items-center justify-center gap-3 border border-zinc-700 ${isSaved ? 'text-green-500 border-green-900 bg-green-900/10' : ''}`}
+                                 >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                                    {isSaved ? 'MISSION ARCHIVED' : 'ARCHIVE PLAN'}
+                                 </button>
+                             )}
                         </div>
                     </div>
                 )}

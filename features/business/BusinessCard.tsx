@@ -25,6 +25,14 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
     isInComparison,
     onToggleComparison
 }) => {
+  // Color coding based on Match Score
+  const score = business.matchScore || 0;
+  let matchColor = 'text-zinc-500';
+  let matchBorder = 'border-zinc-800';
+  if (score >= 90) { matchColor = 'text-primary'; matchBorder = 'border-primary'; }
+  else if (score >= 75) { matchColor = 'text-green-500'; matchBorder = 'border-green-500'; }
+  else if (score >= 50) { matchColor = 'text-yellow-500'; matchBorder = 'border-yellow-500'; }
+
   return (
     <div 
       onClick={onClick}
@@ -84,8 +92,15 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
                     <h3 className={`font-bold text-sm md:text-base leading-none tracking-tight uppercase ${isSelected ? 'text-white' : 'text-zinc-300 group-hover:text-white'}`}>
                         {business.name}
                     </h3>
-                    {business.priceLevel && (
-                        <span className="text-[9px] font-mono text-zinc-500 bg-zinc-950 px-1.5 py-0.5 border border-zinc-800">{business.priceLevel}</span>
+                    
+                    {/* Match Score Indicator */}
+                    {score > 0 && (
+                        <div className={`flex items-center gap-1.5 border px-1.5 py-0.5 rounded-sm ${matchBorder} bg-black/50`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${matchColor.replace('text', 'bg')} animate-pulse`}></div>
+                            <span className={`text-[8px] font-mono font-bold ${matchColor}`}>
+                                {score}% MATCH
+                            </span>
+                        </div>
                     )}
                 </div>
 
@@ -98,6 +113,9 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
                              <span className="w-1 h-1 bg-zinc-600 rounded-full"></span>
                              DST: {(business.distanceMeters / 1000).toFixed(2)}KM
                         </span>
+                    )}
+                    {business.priceLevel && (
+                        <span className="text-[9px] font-mono text-zinc-500 bg-zinc-950 px-1.5 border border-zinc-800">{business.priceLevel}</span>
                     )}
                 </div>
 

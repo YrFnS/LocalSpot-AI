@@ -7,6 +7,7 @@ import { speakDescription } from '../services/audioGenService';
 import { getRandomWeather } from '../services/weatherService';
 import { useGeolocation } from './useGeolocation';
 import { useFavorites } from './useFavorites';
+import { useMissions } from './useMissions';
 import { useComparison } from './useComparison';
 import { getThemeForQuery, THEMES } from '../utils/themeUtils';
 import { filterBusinesses } from '../utils/filterUtils';
@@ -24,6 +25,7 @@ export const useAppController = () => {
 
     const { location: userLocation } = useGeolocation();
     const { favorites, toggleFavorite, isFavorite, updateNote, addTag, removeTag, getFavorite } = useFavorites();
+    const { missions, saveMission, deleteMission } = useMissions();
     const { 
         comparisonList, 
         comparisonResult, 
@@ -223,6 +225,7 @@ export const useAppController = () => {
         selectedTag,
         setSelectedTag,
         favorites,
+        missions,
         hoveredBusinessId,
         setHoveredBusinessId,
         weather,
@@ -247,7 +250,9 @@ export const useAppController = () => {
             toggleComparison,
             removeFromComparison,
             runComparison,
-            handlePlotItinerary
+            handlePlotItinerary,
+            saveMission,
+            deleteMission
         }
     };
 };

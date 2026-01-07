@@ -49,6 +49,7 @@ export interface Business {
   openNow?: boolean;
   phoneNumber?: string;
   hours?: string;
+  matchScore?: number; // 0-100 Relevance Score
   
   // Booking Data
   bookingAvailable?: boolean;
@@ -71,7 +72,8 @@ export interface SearchState {
 export enum SortOption {
   RELEVANCE = 'RELEVANCE',
   RATING = 'RATING',
-  DISTANCE = 'DISTANCE'
+  DISTANCE = 'DISTANCE',
+  MATCH = 'MATCH'
 }
 
 export interface FilterState {
@@ -91,6 +93,7 @@ export enum ViewMode {
 export enum Tab {
   SEARCH = 'SEARCH',
   FAVORITES = 'FAVORITES',
+  MISSIONS = 'MISSIONS',
 }
 
 export interface AudioState {
@@ -109,9 +112,11 @@ export interface ItineraryItem {
 }
 
 export interface Itinerary {
+  id?: string; // Added ID for persistence
   title: string;
   items: ItineraryItem[];
   totalCostEstimate: string;
+  createdAt?: number;
 }
 
 export type WeatherCondition = 'Sunny' | 'Rainy' | 'Cloudy' | 'Foggy' | 'Night';
