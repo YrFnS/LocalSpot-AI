@@ -1,27 +1,23 @@
 
 import React from 'react';
-import { SearchBar } from './features/search/SearchBar';
-import { FilterBar } from './features/search/FilterBar';
 import RadarMap from './features/visualization/RadarMap';
 import { RealMap } from './features/visualization/RealMap';
 import { BusinessGrid } from './features/visualization/BusinessGrid';
-import { BusinessCard } from './features/business/BusinessCard';
 import { BusinessDetailModal } from './features/business/BusinessDetailModal';
-import { CategorySelector } from './features/discovery/CategorySelector';
-import { AudioVisualizer } from './features/visualization/AudioVisualizer';
 import { OracleOverlay } from './features/live/OracleOverlay';
 import { CuratorPanel } from './features/curator/CuratorPanel';
-import { ContextHud } from './features/context/ContextHud';
 import { VisionModal } from './features/search/VisionModal';
 import { CompareTray } from './features/comparison/CompareTray';
 import { ComparisonModal } from './features/comparison/ComparisonModal';
 import { VibeSynthesizer } from './features/search/VibeSynthesizer';
 import { SignalBoot } from './features/visualization/SignalBoot';
-import { MissionLog } from './features/missions/MissionLog';
+import { Header } from './features/layout/Header';
+import { Sidebar } from './features/layout/Sidebar';
+import { Footer } from './features/layout/Footer';
 import { useLiveSession } from './hooks/useLiveSession';
 import { useAppController } from './hooks/useAppController';
 import { useSoundFX } from './hooks/useSoundFX';
-import { Tab, ViewMode } from './types';
+import { ViewMode } from './types';
 
 const App: React.FC = () => {
   const {
@@ -68,22 +64,8 @@ const App: React.FC = () => {
     handlers
   } = useAppController();
 
-  const { playNav, playClick, playHover, playScan, playSuccess } = useSoundFX();
-
-  // Wrap actions with sound
-  const handleTabChange = (tab: Tab) => {
-      if (tab !== activeTab) {
-          playNav();
-          setActiveTab(tab);
-      }
-  };
-
-  const handleViewModeChange = (mode: ViewMode) => {
-      if (mode !== viewMode) {
-          playClick();
-          setViewMode(mode);
-      }
-  };
+  const playFunctions = useSoundFX();
+  const { playClick, playHover, playScan, playSuccess } = playFunctions;
 
   const handleLiveToolCall = async (name: string, args: any) => {
       if (name === 'searchMap' && args.query) {
@@ -205,241 +187,44 @@ const App: React.FC = () => {
           />
       )}
 
-      <header className="z-50 border-b border-zinc-800 bg-background/80 backdrop-blur-md flex flex-col gap-0 relative shadow-2xl">
-         <div className="px-4 py-3 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 shrink-0">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary to-orange-600 rounded-sm flex items-center justify-center font-bold text-black font-mono shadow-[0_0_15px_rgba(249,115,22,0.5)] border border-white/20">LS</div>
-                <h1 className="text-lg font-bold tracking-tighter hidden md:block text-white">LOCALSPOT</h1>
-            </div>
-            
-            <div className="flex-1 max-w-2xl flex items-stretch h-10 gap-2">
-                 <div className="hidden lg:block h-full">
-                     <ContextHud weather={weather} onWeatherToggle={handlers.handleWeatherToggle} locationName={locationLabel} />
-                 </div>
-                 <div className="flex-1">
-                    <SearchBar 
-                        onSearch={(q) => { playScan(); handlers.handleSearch(q); }}
-                        isSearching={state.isSearching} 
-                        suggestions={aiSuggestions} 
-                        onOpenVision={() => { playClick(); setIsVisionOpen(true); }}
-                    />
-                 </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-                <AudioVisualizer isPlaying={isAudioPlaying} />
-                <button 
-                    onClick={() => { playClick(); setIsSynthesizerOpen(true); }}
-                    onMouseEnter={playHover}
-                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-sm bg-zinc-900 border border-zinc-700 text-xs font-mono text-cyan-400 hover:text-white hover:border-cyan-500 transition-colors shadow-sm"
-                >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v18"></path><path d="M6 8v8"></path><path d="M18 8v8"></path><path d="M2 12h20"></path></svg>
-                    SYNTH
-                </button>
-                <button 
-                    onClick={() => { playClick(); setIsCuratorOpen(true); }}
-                    onMouseEnter={playHover}
-                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-sm bg-zinc-900 border border-zinc-700 text-xs font-mono text-purple-400 hover:text-white hover:border-purple-500 transition-colors shadow-sm"
-                >
-                    <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
-                    CURATE
-                </button>
-                <div className="h-6 w-[1px] bg-zinc-800 mx-2"></div>
-                <div className="flex bg-zinc-900 rounded-sm p-0.5 gap-0.5 border border-zinc-800">
-                    <button onClick={() => handleViewModeChange(ViewMode.LIST)} onMouseEnter={playHover} className={`p-1.5 rounded-sm font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.LIST ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`} title="List View">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                    </button>
-                    <button onClick={() => handleViewModeChange(ViewMode.RADAR)} onMouseEnter={playHover} className={`p-1.5 rounded-sm font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.RADAR ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`} title="Radar View">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-                    </button>
-                    <button onClick={() => handleViewModeChange(ViewMode.MAP)} onMouseEnter={playHover} className={`p-1.5 rounded-sm font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.MAP ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`} title="Map View">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 6v16l7-4 7 4 7-4V2l-7 4-7-4-7 4z"></path><line x1="8" y1="2" x2="8" y2="18"></line><line x1="15" y1="6" x2="15" y2="22"></line></svg>
-                    </button>
-                    <button onClick={() => handleViewModeChange(ViewMode.GRID)} onMouseEnter={playHover} className={`p-1.5 rounded-sm font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.GRID ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`} title="Grid View">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                    </button>
-                </div>
-            </div>
-         </div>
-         <CategorySelector 
-            onSelect={(q) => { playScan(); handlers.handleSearch(q); }} 
-            disabled={state.isSearching} 
-            currentQuery={state.query}
-         />
-         {(state.results.length > 0 || activeTab === Tab.FAVORITES) && <FilterBar filters={filters} onChange={setFilters} />}
-         
-         {aiAnalysisResult && (
-             <div className="bg-primary/10 border-b border-primary/20 p-2 flex items-center justify-center gap-2 animate-in slide-in-from-top-2">
-                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                 <span className="text-[10px] font-mono text-primary-200 uppercase tracking-wide">
-                     VISION ANALYSIS: "{aiAnalysisResult}"
-                 </span>
-                 <button onClick={() => { playClick(); handlers.handleSearch("local favorites"); }} className="ml-2 text-[10px] underline decoration-dotted text-zinc-500 hover:text-white">CLEAR</button>
-             </div>
-         )}
-      </header>
+      <Header 
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        isAudioPlaying={isAudioPlaying}
+        setIsSynthesizerOpen={setIsSynthesizerOpen}
+        setIsCuratorOpen={setIsCuratorOpen}
+        setIsVisionOpen={setIsVisionOpen}
+        weather={weather}
+        locationLabel={locationLabel}
+        state={state}
+        aiSuggestions={aiSuggestions}
+        aiAnalysisResult={aiAnalysisResult}
+        filters={filters}
+        setFilters={setFilters}
+        handlers={handlers}
+        playFunctions={playFunctions}
+      />
 
       <main className="flex-1 flex relative overflow-hidden z-10">
-        <div 
-            className={`
-                absolute inset-0 z-20 bg-background/95 md:bg-background/80 backdrop-blur md:static md:w-[420px] md:border-r md:border-zinc-800 flex flex-col transition-transform duration-300 
-                ${(viewMode === ViewMode.RADAR || viewMode === ViewMode.GRID || viewMode === ViewMode.MAP) ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
-                ${viewMode === ViewMode.GRID ? 'md:hidden' : ''} 
-            `}
-        >
-           {/* Navigation Tabs - Hardware Switch Style */}
-           <div className="flex border-b border-zinc-900 bg-zinc-950 p-1">
-               <button 
-                  onClick={() => handleTabChange(Tab.SEARCH)}
-                  onMouseEnter={playHover}
-                  className={`flex-1 py-3 text-xs font-mono font-bold uppercase tracking-widest transition-all duration-300 relative overflow-hidden group ${activeTab === Tab.SEARCH ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
-               >
-                   <div className={`absolute inset-0 bg-primary transition-transform duration-300 origin-left ${activeTab === Tab.SEARCH ? 'scale-x-100' : 'scale-x-0'}`}></div>
-                   <div className={`absolute inset-0 bg-zinc-900 transition-transform duration-300 origin-left ${activeTab === Tab.SEARCH ? 'scale-x-0' : 'scale-x-100'}`}></div>
-                   <span className="relative z-10 flex items-center justify-center gap-2">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                      DISCOVERY
-                   </span>
-               </button>
-               
-               <button 
-                  onClick={() => handleTabChange(Tab.FAVORITES)}
-                  onMouseEnter={playHover}
-                  className={`flex-1 py-3 text-xs font-mono font-bold uppercase tracking-widest transition-all duration-300 relative overflow-hidden group ${activeTab === Tab.FAVORITES ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
-               >
-                   <div className={`absolute inset-0 bg-primary transition-transform duration-300 origin-bottom ${activeTab === Tab.FAVORITES ? 'scale-y-100' : 'scale-y-0'}`}></div>
-                   <div className={`absolute inset-0 bg-zinc-900 transition-transform duration-300 origin-bottom ${activeTab === Tab.FAVORITES ? 'scale-y-0' : 'scale-y-100'}`}></div>
-                   <span className="relative z-10 flex items-center justify-center gap-2">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-                      ARCHIVE
-                      <span className="opacity-60 font-normal">({favorites.length})</span>
-                   </span>
-               </button>
-
-               <button 
-                  onClick={() => handleTabChange(Tab.MISSIONS)}
-                  onMouseEnter={playHover}
-                  className={`flex-1 py-3 text-xs font-mono font-bold uppercase tracking-widest transition-all duration-300 relative overflow-hidden group ${activeTab === Tab.MISSIONS ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
-               >
-                   <div className={`absolute inset-0 bg-primary transition-transform duration-300 origin-right ${activeTab === Tab.MISSIONS ? 'scale-x-100' : 'scale-x-0'}`}></div>
-                   <div className={`absolute inset-0 bg-zinc-900 transition-transform duration-300 origin-right ${activeTab === Tab.MISSIONS ? 'scale-x-0' : 'scale-x-100'}`}></div>
-                   <span className="relative z-10 flex items-center justify-center gap-2">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                      MISSIONS
-                      <span className="opacity-60 font-normal">({missions.length})</span>
-                   </span>
-               </button>
-           </div>
-           
-           {/* Tab Content Area */}
-           <div className="flex-1 overflow-y-auto custom-scrollbar pb-20">
-              
-              {/* --- SEARCH TAB CONTENT --- */}
-              {activeTab === Tab.SEARCH && (
-                <>
-                    {state.error && (
-                        <div className="p-4 bg-red-950/30 border-b border-red-900/50 flex items-start gap-3 relative overflow-hidden">
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 animate-pulse"></div>
-                        <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <div>
-                            <p className="text-xs text-red-200 font-bold mb-1 font-mono tracking-wide">SIGNAL INTERRUPTION</p>
-                            <p className="text-[10px] text-red-300/70 font-mono">{state.error}</p>
-                            <button onClick={() => { playClick(); handlers.handleRescan(); }} className="mt-2 text-[10px] text-red-400 hover:text-white underline decoration-dotted font-mono uppercase">RE-ESTABLISH UPLINK</button>
-                        </div>
-                        </div>
-                    )}
-
-                    {state.isSearching && (
-                        <div className="p-4 space-y-4">
-                            {[1,2,3,4].map(i => (
-                                <div key={i} className="animate-pulse flex flex-col gap-2 p-4 border-b border-zinc-800/50">
-                                    <div className="flex justify-between">
-                                        <div className="h-4 bg-zinc-800 rounded w-2/3"></div>
-                                        <div className="h-4 bg-zinc-800 rounded w-8"></div>
-                                    </div>
-                                    <div className="h-3 bg-zinc-800/50 rounded w-1/3"></div>
-                                    <div className="h-10 bg-zinc-800/30 rounded w-full mt-1"></div>
-                                </div>
-                            ))}
-                            <div className="text-center pt-2">
-                                <span className="text-xs font-mono text-primary animate-pulse">DETECTING SIGNALS...</span>
-                            </div>
-                        </div>
-                    )}
-
-                    {!state.isSearching && displayedList.map(biz => (
-                        <BusinessCard 
-                            key={biz.id} 
-                            business={biz} 
-                            isSelected={state.selectedBusinessId === biz.id} 
-                            isFavorite={handlers.isFavorite(biz.id)} 
-                            onToggleFavorite={(b) => { playClick(); handlers.toggleFavorite(b); }} 
-                            onClick={() => { playClick(); handlers.handleSelectBusiness(biz.id); }} 
-                            onSpeak={(t) => { playClick(); handlers.handleSpeak(t); }} 
-                            onHover={(id) => { if (id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
-                            isInComparison={comparisonList.some(b => b.id === biz.id)}
-                            onToggleComparison={(b) => { playClick(); handlers.toggleComparison(b); }}
-                        />
-                    ))}
-                    
-                    {!state.isSearching && displayedList.length === 0 && !state.error && (
-                        <div className="p-8 text-center text-zinc-600 text-xs font-mono flex flex-col items-center gap-2 mt-10">
-                            <div className="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-2 animate-pulse">
-                                <svg className="w-6 h-6 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            </div>
-                            START A SEARCH TO DETECT SIGNALS
-                        </div>
-                    )}
-                </>
-              )}
-
-              {/* --- FAVORITES TAB CONTENT --- */}
-              {activeTab === Tab.FAVORITES && (
-                <>
-                    {uniqueTags.length > 0 && (
-                        <div className="flex gap-2 overflow-x-auto p-2 bg-zinc-900/50 border-b border-zinc-800 scrollbar-hide">
-                            <button onClick={() => { playClick(); setSelectedTag(null); }} className={`px-3 py-1 rounded-sm text-[10px] font-mono whitespace-nowrap border ${!selectedTag ? 'bg-primary/20 text-primary border-primary' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>ALL</button>
-                            {uniqueTags.map(tag => (
-                                <button key={tag} onClick={() => { playClick(); setSelectedTag(tag === selectedTag ? null : tag); }} className={`px-3 py-1 rounded-sm text-[10px] font-mono whitespace-nowrap border ${selectedTag === tag ? 'bg-primary/20 text-primary border-primary' : 'bg-transparent text-zinc-400 border-zinc-800'}`}>{tag}</button>
-                            ))}
-                        </div>
-                    )}
-                    {displayedList.map(biz => (
-                        <BusinessCard 
-                            key={biz.id} 
-                            business={biz} 
-                            isSelected={state.selectedBusinessId === biz.id} 
-                            isFavorite={handlers.isFavorite(biz.id)} 
-                            onToggleFavorite={(b) => { playClick(); handlers.toggleFavorite(b); }} 
-                            onClick={() => { playClick(); handlers.handleSelectBusiness(biz.id); }} 
-                            onSpeak={(t) => { playClick(); handlers.handleSpeak(t); }} 
-                            onHover={(id) => { if (id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
-                            isInComparison={comparisonList.some(b => b.id === biz.id)}
-                            onToggleComparison={(b) => { playClick(); handlers.toggleComparison(b); }}
-                        />
-                    ))}
-                    {displayedList.length === 0 && (
-                         <div className="p-8 text-center text-zinc-600 text-xs font-mono flex flex-col items-center gap-2 mt-10">
-                            <div className="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-2">
-                                <svg className="w-6 h-6 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                            </div>
-                            NO ARCHIVED ENTITIES
-                        </div>
-                    )}
-                </>
-              )}
-
-              {/* --- MISSIONS TAB CONTENT --- */}
-              {activeTab === Tab.MISSIONS && (
-                  <MissionLog 
-                      missions={missions} 
-                      onDelete={(id) => { playClick(); handlers.deleteMission(id); }} 
-                      onLoad={(m) => { playSuccess(); handlers.handlePlotItinerary(m); }} 
-                  />
-              )}
-
-           </div>
-        </div>
+        <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            viewMode={viewMode}
+            state={state}
+            displayedList={displayedList}
+            uniqueTags={uniqueTags}
+            selectedTag={selectedTag}
+            setSelectedTag={setSelectedTag}
+            favorites={favorites}
+            missions={missions}
+            comparisonList={comparisonList}
+            hoveredBusinessId={hoveredBusinessId}
+            setHoveredBusinessId={setHoveredBusinessId}
+            handlers={handlers}
+            playFunctions={playFunctions}
+        />
 
         <div className="flex-1 relative bg-transparent overflow-hidden">
             {renderMainContent()}
@@ -485,28 +270,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Global System Status Footer */}
-      <footer className="z-50 bg-[#050505] border-t border-zinc-800 h-6 flex items-center px-4 justify-between font-mono text-[9px] text-zinc-600 select-none">
-          <div className="flex items-center gap-4">
-              <span className="text-primary flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
-                  SYSTEM_ONLINE
-              </span>
-              <span className="hidden md:inline">VERSION 2.5.0-ALPHA</span>
-          </div>
-          <div className="flex-1 mx-4 overflow-hidden relative opacity-50">
-               <div className="absolute inset-0 flex items-center whitespace-nowrap animate-[marquee_20s_linear_infinite]">
-                   <span className="mx-4">CONNECTING TO GEMINI NEURAL NET...</span>
-                   <span className="mx-4">GEOSPATIAL DATA STREAM: ACTIVE</span>
-                   <span className="mx-4">AUDIO UPLINK: STANDBY</span>
-                   <span className="mx-4">SECURITY PROTOCOLS: ENGAGED</span>
-               </div>
-          </div>
-          <div className="flex items-center gap-4">
-              <span className="hidden md:inline">LATENCY: 14MS</span>
-              <span className="text-zinc-500">MEM: 128MB</span>
-          </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
