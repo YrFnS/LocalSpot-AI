@@ -14,9 +14,10 @@ const CATEGORIES = [
 interface CategorySelectorProps {
   onSelect: (query: string) => void;
   disabled: boolean;
+  currentQuery?: string;
 }
 
-export const CategorySelector: React.FC<CategorySelectorProps> = ({ onSelect, disabled }) => {
+export const CategorySelector: React.FC<CategorySelectorProps> = ({ onSelect, disabled, currentQuery = '' }) => {
   return (
     <div className="w-full border-b border-zinc-800 bg-black/40 backdrop-blur-md relative overflow-hidden group">
        {/* Background Grid */}
@@ -29,34 +30,39 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({ onSelect, di
             <span className="text-[10px] font-mono text-primary animate-pulse">HZ-20</span>
         </div>
 
-        {CATEGORIES.map((cat, idx) => (
-            <button
-            key={cat.id}
-            onClick={() => onSelect(cat.query)}
-            disabled={disabled}
-            className="
-                flex-shrink-0 relative group/btn overflow-hidden
-                px-4 py-2 border border-zinc-800/50 bg-zinc-900/20 rounded-sm
-                hover:border-primary/50 hover:bg-zinc-900/80 transition-all duration-300
-                disabled:opacity-30 disabled:cursor-not-allowed
-                min-w-[100px] text-left
-            "
-            >
-                <div className="flex justify-between items-start mb-1">
-                    <span className="text-[9px] font-mono text-zinc-500 group-hover/btn:text-primary transition-colors">{cat.freq}</span>
-                    <div className="w-1 h-1 bg-zinc-700 group-hover/btn:bg-primary rounded-full"></div>
-                </div>
-                <div className="text-xs font-bold font-mono text-zinc-300 group-hover/btn:text-white tracking-wider">
-                    {cat.label}
-                </div>
-                
-                {/* Hover line */}
-                <div className="absolute bottom-0 left-0 h-[2px] bg-primary w-0 group-hover/btn:w-full transition-all duration-300"></div>
-                
-                {/* Corner accent */}
-                <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-transparent group-hover/btn:border-primary/30 transition-all"></div>
-            </button>
-        ))}
+        {CATEGORIES.map((cat, idx) => {
+            const isActive = currentQuery.toLowerCase().includes(cat.id);
+            
+            return (
+                <button
+                key={cat.id}
+                onClick={() => onSelect(cat.query)}
+                disabled={disabled}
+                className={`
+                    flex-shrink-0 relative group/btn overflow-hidden
+                    px-4 py-2 border rounded-sm transition-all duration-300
+                    disabled:opacity-30 disabled:cursor-not-allowed
+                    min-w-[100px] text-left
+                    ${isActive 
+                        ? 'bg-primary/20 border-primary text-white shadow-[0_0_15px_rgba(249,115,22,0.2)]' 
+                        : 'bg-zinc-900/20 border-zinc-800/50 hover:bg-zinc-900/80 hover:border-zinc-600'}
+                `}
+                >
+                    <div className="flex justify-between items-start mb-1">
+                        <span className={`text-[9px] font-mono transition-colors ${isActive ? 'text-primary' : 'text-zinc-500 group-hover/btn:text-zinc-300'}`}>{cat.freq}</span>
+                        <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-primary shadow-[0_0_5px_#f97316]' : 'bg-zinc-800 group-hover/btn:bg-zinc-600'}`}></div>
+                    </div>
+                    <div className={`text-xs font-bold font-mono tracking-wider ${isActive ? 'text-white' : 'text-zinc-400 group-hover/btn:text-white'}`}>
+                        {cat.label}
+                    </div>
+                    
+                    {/* Active Scan Line */}
+                    {isActive && (
+                        <div className="absolute bottom-0 left-0 h-[2px] bg-primary w-full animate-scan-vertical" style={{ animationDuration: '3s' }}></div>
+                    )}
+                </button>
+            );
+        })}
         
         <div className="flex-shrink-0 w-8"></div> {/* Spacer */}
        </div>

@@ -8,6 +8,7 @@ interface CuratorPanelProps {
   onClose: () => void;
   availableBusinesses: Business[];
   onSelectBusiness: (id: string) => void;
+  onPlotCourse?: (itinerary: Itinerary) => void;
 }
 
 const QUICK_VIBES = [
@@ -21,7 +22,8 @@ export const CuratorPanel: React.FC<CuratorPanelProps> = ({
     isOpen, 
     onClose, 
     availableBusinesses,
-    onSelectBusiness
+    onSelectBusiness,
+    onPlotCourse
 }) => {
   const [prompt, setPrompt] = useState('');
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
@@ -229,7 +231,16 @@ export const CuratorPanel: React.FC<CuratorPanelProps> = ({
                         </div>
                         
                         {/* Footer Action */}
-                        <div className="pt-4 sticky bottom-0 bg-[#09090b]/95 backdrop-blur py-4 -mx-6 px-6 border-t border-zinc-800">
+                        <div className="pt-4 sticky bottom-0 bg-[#09090b]/95 backdrop-blur py-4 -mx-6 px-6 border-t border-zinc-800 space-y-2">
+                             {onPlotCourse && (
+                                 <button 
+                                    onClick={() => onPlotCourse(itinerary)}
+                                    className="w-full py-3 bg-purple-900/50 hover:bg-purple-800 text-white text-[10px] font-mono font-bold uppercase tracking-[0.15em] transition-colors rounded-sm flex items-center justify-center gap-3 border border-purple-500/30 group"
+                                 >
+                                    <span className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></span>
+                                    INITIATE ROUTE PROJECTION
+                                 </button>
+                             )}
                              <button className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] font-mono font-bold uppercase tracking-[0.15em] transition-colors rounded-sm flex items-center justify-center gap-3 border border-zinc-700">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                                 ARCHIVE PLAN

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { FilterState, SortOption } from '../../types';
 
 interface FilterBarProps {
@@ -8,8 +8,6 @@ interface FilterBarProps {
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
-  const [activePanel, setActivePanel] = useState<'RATING' | 'SORT' | null>(null);
-
   const togglePrice = (price: string) => {
     const current = filters.priceLevels;
     const next = current.includes(price) 
@@ -21,76 +19,97 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
   const ratings = [3.5, 4.0, 4.5];
   
   return (
-    <div className="w-full border-b border-zinc-800 bg-[#09090b]/95 backdrop-blur-md z-30 relative py-2 px-4 flex items-center gap-4 overflow-x-auto scrollbar-hide">
+    <div className="w-full border-b border-zinc-800 bg-[#09090b]/95 backdrop-blur-md z-30 relative py-3 px-4 flex items-center gap-6 overflow-x-auto custom-scrollbar">
        
-       {/* Price Toggles */}
-       <div className="flex items-center gap-px bg-zinc-800 border border-zinc-800 rounded-sm overflow-hidden shrink-0">
-          {['$', '$$', '$$$'].map(price => (
-             <button
-                key={price}
-                onClick={() => togglePrice(price)}
-                className={`
-                   px-3 py-1 text-[10px] font-mono font-bold transition-all min-w-[32px]
-                   ${filters.priceLevels.includes(price) 
-                     ? 'bg-zinc-200 text-black' 
-                     : 'bg-zinc-900 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'}
-                `}
-             >
-                {price}
-             </button>
-          ))}
-       </div>
-
-       <div className="w-px h-6 bg-zinc-800 shrink-0"></div>
-
-       {/* Open Now Switch */}
-       <button
-          onClick={() => onChange({ ...filters, onlyOpen: !filters.onlyOpen })}
-          className={`
-             flex items-center gap-2 px-3 py-1 rounded-sm border transition-all text-[10px] font-mono tracking-wider shrink-0
-             ${filters.onlyOpen 
-               ? 'bg-green-900/20 border-green-800 text-green-400 shadow-[0_0_10px_rgba(74,222,128,0.1)]' 
-               : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600'}
-          `}
-       >
-          <div className={`w-1.5 h-1.5 rounded-sm transition-colors ${filters.onlyOpen ? 'bg-green-400 animate-pulse' : 'bg-zinc-600'}`}></div>
-          OPEN_NOW
-       </button>
-
-       {/* Rating Selector */}
-       <div className="flex items-center gap-2 shrink-0">
-           <span className="text-[9px] font-mono text-zinc-600 uppercase">MIN_RAT:</span>
-           <div className="flex gap-1">
-               {ratings.map(r => (
-                   <button
-                        key={r}
-                        onClick={() => onChange({ ...filters, minRating: filters.minRating === r ? 0 : r })}
+       {/* Price Control Group */}
+       <div className="flex flex-col gap-1 shrink-0">
+           <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">COST_GAIN</span>
+           <div className="flex items-center bg-black border border-zinc-800 rounded-sm p-0.5">
+              {['$', '$$', '$$$'].map(price => {
+                 const isActive = filters.priceLevels.includes(price);
+                 return (
+                     <button
+                        key={price}
+                        onClick={() => togglePrice(price)}
                         className={`
-                            w-8 h-6 flex items-center justify-center border text-[9px] font-mono rounded-sm transition-all
-                            ${filters.minRating === r 
-                                ? 'bg-primary/20 border-primary text-primary font-bold' 
-                                : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600'}
+                           relative w-8 h-6 text-[9px] font-mono font-bold transition-all flex items-center justify-center
+                           ${isActive ? 'text-black' : 'text-zinc-600 hover:text-zinc-400'}
                         `}
-                   >
-                       {r}
-                   </button>
-               ))}
+                     >
+                        {isActive && (
+                            <div className="absolute inset-0 bg-zinc-200 shadow-[0_0_10px_rgba(255,255,255,0.5)] z-0"></div>
+                        )}
+                        <span className="relative z-10">{price}</span>
+                     </button>
+                 );
+              })}
            </div>
        </div>
 
-       <div className="flex-1"></div>
+       {/* Open Now Toggle Switch */}
+       <div className="flex flex-col gap-1 shrink-0">
+           <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">STATUS_FILTER</span>
+           <button
+              onClick={() => onChange({ ...filters, onlyOpen: !filters.onlyOpen })}
+              className={`
+                 relative h-7 w-24 border rounded-full transition-all flex items-center px-1
+                 ${filters.onlyOpen 
+                   ? 'bg-green-900/20 border-green-500/50 shadow-[0_0_10px_rgba(34,197,94,0.1)]' 
+                   : 'bg-zinc-900 border-zinc-700 hover:border-zinc-500'}
+              `}
+           >
+              <div className={`
+                  w-5 h-5 rounded-full shadow-sm transition-all duration-300 flex items-center justify-center
+                  ${filters.onlyOpen ? 'translate-x-[calc(100%+2.5rem)] bg-green-500' : 'translate-x-0 bg-zinc-600'}
+              `}>
+                  {filters.onlyOpen && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>}
+              </div>
+              <span className={`absolute left-0 right-0 text-center text-[9px] font-mono font-bold transition-colors ${filters.onlyOpen ? 'text-green-400' : 'text-zinc-500'}`}>
+                  {filters.onlyOpen ? 'OPEN_ONLY' : 'ALL_HOURS'}
+              </span>
+           </button>
+       </div>
 
-       {/* Sorting */}
-       <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[9px] font-mono text-zinc-600 uppercase hidden sm:inline">SORT_SEQ:</span>
-            <div className="flex bg-zinc-900 rounded-sm border border-zinc-800 p-0.5">
+       {/* Rating Threshold Slider (Visual) */}
+       <div className="flex flex-col gap-1 shrink-0">
+           <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">MIN_SIGNAL</span>
+           <div className="flex gap-0.5 items-end h-7 bg-black border border-zinc-800 px-1 py-1">
+               {ratings.map((r, i) => {
+                   const isActive = filters.minRating === r;
+                   const isPast = filters.minRating >= r;
+                   return (
+                       <button
+                            key={r}
+                            onClick={() => onChange({ ...filters, minRating: isActive ? 0 : r })}
+                            className={`
+                                w-6 transition-all relative group
+                                ${isActive ? 'h-full bg-primary shadow-[0_0_10px_rgba(249,115,22,0.6)]' : (isPast ? 'h-full bg-primary/40' : 'h-1/2 bg-zinc-800 hover:bg-zinc-700')}
+                            `}
+                       >
+                           <div className="absolute bottom-full left-0 w-full text-[8px] font-mono text-primary opacity-0 group-hover:opacity-100 mb-1 pointer-events-none">
+                               {r}
+                           </div>
+                       </button>
+                   );
+               })}
+           </div>
+       </div>
+
+       <div className="w-px h-8 bg-zinc-800 shrink-0"></div>
+
+       {/* Sorting Selector */}
+       <div className="flex flex-col gap-1 shrink-0">
+            <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">SORT_SEQUENCE</span>
+            <div className="flex bg-zinc-900 border border-zinc-800 p-0.5 gap-0.5">
                 {[SortOption.RELEVANCE, SortOption.RATING, SortOption.DISTANCE].map(opt => (
                     <button
                         key={opt}
                         onClick={() => onChange({ ...filters, sortBy: opt })}
                         className={`
-                            px-2 py-1 text-[9px] font-mono uppercase rounded-sm transition-all
-                            ${filters.sortBy === opt ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}
+                            px-3 py-1 text-[9px] font-mono uppercase transition-all
+                            ${filters.sortBy === opt 
+                                ? 'bg-zinc-700 text-white shadow-sm font-bold border-b-2 border-primary' 
+                                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 border-b-2 border-transparent'}
                         `}
                     >
                         {opt === SortOption.RELEVANCE ? 'REL' : (opt === SortOption.RATING ? 'RAT' : 'DIST')}
@@ -99,14 +118,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
             </div>
        </div>
 
-       {/* Reset */}
+       {/* Reset Button */}
        {(filters.minRating > 0 || filters.priceLevels.length > 0 || filters.onlyOpen || filters.sortBy !== SortOption.RELEVANCE) && (
            <button 
              onClick={() => onChange({ minRating: 0, priceLevels: [], onlyOpen: false, sortBy: SortOption.RELEVANCE })}
-             className="ml-2 w-6 h-6 flex items-center justify-center bg-red-900/20 border border-red-900/50 text-red-500 hover:bg-red-900/40 rounded-sm transition-colors shrink-0"
-             title="RESET PARAMETERS"
+             className="ml-auto px-3 py-1 bg-red-950/30 border border-red-900/50 text-red-500 hover:bg-red-900/50 hover:text-red-300 text-[9px] font-mono uppercase tracking-widest transition-all"
            >
-             ✕
+             RESET_PARAMS
            </button>
        )}
     </div>

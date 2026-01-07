@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { SearchBar } from './features/search/SearchBar';
 import { FilterBar } from './features/search/FilterBar';
@@ -60,6 +61,7 @@ const App: React.FC = () => {
     comparisonResult,
     isComparing,
     setComparisonResult,
+    activeItinerary,
     handlers
   } = useAppController();
 
@@ -103,6 +105,7 @@ const App: React.FC = () => {
                 hoveredId={hoveredBusinessId}
                 setHoveredId={setHoveredBusinessId}
                 onRescan={handlers.handleRescan}
+                activeItinerary={activeItinerary}
               />
           );
       }
@@ -145,6 +148,7 @@ const App: React.FC = () => {
         onClose={() => setIsCuratorOpen(false)} 
         availableBusinesses={state.results}
         onSelectBusiness={handlers.handleOpenDetail}
+        onPlotCourse={handlers.handlePlotItinerary}
       />
 
       <VisionModal 
@@ -233,7 +237,11 @@ const App: React.FC = () => {
                 </div>
             </div>
          </div>
-         <CategorySelector onSelect={handlers.handleSearch} disabled={state.isSearching} />
+         <CategorySelector 
+            onSelect={handlers.handleSearch} 
+            disabled={state.isSearching} 
+            currentQuery={state.query}
+         />
          {(state.results.length > 0 || activeTab === Tab.FAVORITES) && <FilterBar filters={filters} onChange={setFilters} />}
          
          {aiAnalysisResult && (
@@ -255,32 +263,57 @@ const App: React.FC = () => {
                 ${viewMode === ViewMode.GRID ? 'md:hidden' : ''} 
             `}
         >
-           <div className="grid grid-cols-2 border-b border-zinc-900 bg-zinc-950/50">
-               <button onClick={() => setActiveTab(Tab.SEARCH)} className={`py-3 text-xs font-mono tracking-widest transition-colors ${activeTab === Tab.SEARCH ? 'text-white border-b-2 border-primary bg-zinc-900/50' : 'text-zinc-500 hover:bg-zinc-900/30'}`}>DISCOVERY ({activeTab === Tab.SEARCH ? displayedList.length : state.results.length})</button>
-               <button onClick={() => setActiveTab(Tab.FAVORITES)} className={`py-3 text-xs font-mono tracking-widest transition-colors ${activeTab === Tab.FAVORITES ? 'text-white border-b-2 border-primary bg-zinc-900/50' : 'text-zinc-500 hover:bg-zinc-900/30'}`}>SAVED ({favorites.length})</button>
+           {/* Navigation Tabs - Hardware Switch Style */}
+           <div className="flex border-b border-zinc-900 bg-zinc-950 p-1">
+               <button 
+                  onClick={() => setActiveTab(Tab.SEARCH)} 
+                  className={`flex-1 py-3 text-xs font-mono font-bold uppercase tracking-widest transition-all duration-300 relative overflow-hidden group ${activeTab === Tab.SEARCH ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+               >
+                   <div className={`absolute inset-0 bg-primary transition-transform duration-300 origin-left ${activeTab === Tab.SEARCH ? 'scale-x-100' : 'scale-x-0'}`}></div>
+                   <div className={`absolute inset-0 bg-zinc-900 transition-transform duration-300 origin-left ${activeTab === Tab.SEARCH ? 'scale-x-0' : 'scale-x-100'}`}></div>
+                   <span className="relative z-10 flex items-center justify-center gap-2">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                      DISCOVERY
+                      <span className="opacity-60 font-normal">({activeTab === Tab.SEARCH ? displayedList.length : state.results.length})</span>
+                   </span>
+               </button>
+               
+               <button 
+                  onClick={() => setActiveTab(Tab.FAVORITES)} 
+                  className={`flex-1 py-3 text-xs font-mono font-bold uppercase tracking-widest transition-all duration-300 relative overflow-hidden group ${activeTab === Tab.FAVORITES ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+               >
+                   <div className={`absolute inset-0 bg-primary transition-transform duration-300 origin-right ${activeTab === Tab.FAVORITES ? 'scale-x-100' : 'scale-x-0'}`}></div>
+                   <div className={`absolute inset-0 bg-zinc-900 transition-transform duration-300 origin-right ${activeTab === Tab.FAVORITES ? 'scale-x-0' : 'scale-x-100'}`}></div>
+                   <span className="relative z-10 flex items-center justify-center gap-2">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                      ARCHIVE
+                      <span className="opacity-60 font-normal">({favorites.length})</span>
+                   </span>
+               </button>
            </div>
            
            {activeTab === Tab.FAVORITES && uniqueTags.length > 0 && (
                <div className="flex gap-2 overflow-x-auto p-2 bg-zinc-900/50 border-b border-zinc-800 scrollbar-hide">
-                   <button onClick={() => setSelectedTag(null)} className={`px-3 py-1 rounded text-[10px] font-mono whitespace-nowrap border ${!selectedTag ? 'bg-primary text-black border-primary' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>ALL</button>
+                   <button onClick={() => setSelectedTag(null)} className={`px-3 py-1 rounded-sm text-[10px] font-mono whitespace-nowrap border ${!selectedTag ? 'bg-primary/20 text-primary border-primary' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>ALL</button>
                    {uniqueTags.map(tag => (
-                       <button key={tag} onClick={() => setSelectedTag(tag === selectedTag ? null : tag)} className={`px-3 py-1 rounded text-[10px] font-mono whitespace-nowrap border ${selectedTag === tag ? 'bg-primary text-black border-primary' : 'bg-transparent text-zinc-400 border-zinc-800'}`}>{tag}</button>
+                       <button key={tag} onClick={() => setSelectedTag(tag === selectedTag ? null : tag)} className={`px-3 py-1 rounded-sm text-[10px] font-mono whitespace-nowrap border ${selectedTag === tag ? 'bg-primary/20 text-primary border-primary' : 'bg-transparent text-zinc-400 border-zinc-800'}`}>{tag}</button>
                    ))}
                </div>
            )}
 
            {state.error && (
-             <div className="p-4 bg-red-900/20 border-b border-red-900/50 flex items-start gap-3">
-               <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+             <div className="p-4 bg-red-950/30 border-b border-red-900/50 flex items-start gap-3 relative overflow-hidden">
+               <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 animate-pulse"></div>
+               <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                <div>
-                 <p className="text-xs text-red-200 font-bold mb-1">SIGNAL INTERRUPTION</p>
+                 <p className="text-xs text-red-200 font-bold mb-1 font-mono tracking-wide">SIGNAL INTERRUPTION</p>
                  <p className="text-[10px] text-red-300/70 font-mono">{state.error}</p>
-                 <button onClick={() => handlers.handleRescan()} className="mt-2 text-[10px] text-red-400 hover:text-white underline decoration-dotted">RETRY SCAN</button>
+                 <button onClick={() => handlers.handleRescan()} className="mt-2 text-[10px] text-red-400 hover:text-white underline decoration-dotted font-mono uppercase">RE-ESTABLISH UPLINK</button>
                </div>
              </div>
            )}
 
-           <div className="flex-1 overflow-y-auto scrollbar-hide pb-20">
+           <div className="flex-1 overflow-y-auto custom-scrollbar pb-20">
               {state.isSearching && (
                  <div className="p-4 space-y-4">
                     {[1,2,3,4].map(i => (
@@ -315,11 +348,11 @@ const App: React.FC = () => {
               ))}
               
               {!state.isSearching && displayedList.length === 0 && !state.error && (
-                  <div className="p-8 text-center text-zinc-600 text-xs font-mono flex flex-col items-center gap-2">
-                      <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-2">
-                        <svg className="w-6 h-6 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  <div className="p-8 text-center text-zinc-600 text-xs font-mono flex flex-col items-center gap-2 mt-10">
+                      <div className="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-2 animate-pulse">
+                        <svg className="w-6 h-6 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                       </div>
-                      {activeTab === Tab.SEARCH ? "START A SEARCH TO DETECT SIGNALS" : "NO FAVORITES SAVED"}
+                      {activeTab === Tab.SEARCH ? "START A SEARCH TO DETECT SIGNALS" : "NO ARCHIVED ENTITIES"}
                   </div>
               )}
            </div>
@@ -339,13 +372,13 @@ const App: React.FC = () => {
                 </div>
             )}
             
-            <button onClick={toggleOracle} className="absolute bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary hover:bg-orange-500 text-black shadow-lg shadow-primary/30 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 group" title="Ask The Oracle">
+            <button onClick={toggleOracle} className="absolute bottom-16 right-6 z-40 w-14 h-14 rounded-full bg-primary hover:bg-orange-500 text-black shadow-lg shadow-primary/30 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 group" title="Ask The Oracle">
                 <div className="absolute inset-0 rounded-full border-2 border-white/20 animate-[ping_3s_ease-in-out_infinite] pointer-events-none"></div>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:animate-pulse"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
             </button>
             
             {state.selectedBusinessId && (viewMode === ViewMode.RADAR || viewMode === ViewMode.MAP) && selectedBusiness && !showDetailModal && (
-                <div onClick={() => handlers.handleOpenDetail(state.selectedBusinessId!)} className="absolute bottom-6 left-4 right-4 md:left-auto md:right-24 md:w-80 glass-panel rounded-sm p-5 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 cursor-pointer hover:bg-zinc-900/80 transition-colors group">
+                <div onClick={() => handlers.handleOpenDetail(state.selectedBusinessId!)} className="absolute bottom-16 left-4 right-4 md:left-auto md:right-24 md:w-80 glass-panel rounded-sm p-5 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 cursor-pointer hover:bg-zinc-900/80 transition-colors group">
                     <div className="flex justify-between items-start mb-2"><h2 className="font-bold text-white text-xl tracking-tight group-hover:text-primary transition-colors line-clamp-1">{selectedBusiness.name}</h2></div>
                     <p className="text-sm text-zinc-300 leading-relaxed line-clamp-2 font-light border-l-2 border-zinc-700 pl-3 mb-2">{selectedBusiness.description}</p>
                     <div className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300">CLICK TO EXPAND DOSSIER</div>
@@ -368,8 +401,30 @@ const App: React.FC = () => {
             userTags={selectedBusiness.userTags} 
         />
       )}
+
+      {/* Global System Status Footer */}
+      <footer className="z-50 bg-[#050505] border-t border-zinc-800 h-6 flex items-center px-4 justify-between font-mono text-[9px] text-zinc-600 select-none">
+          <div className="flex items-center gap-4">
+              <span className="text-primary flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
+                  SYSTEM_ONLINE
+              </span>
+              <span className="hidden md:inline">VERSION 2.5.0-ALPHA</span>
+          </div>
+          <div className="flex-1 mx-4 overflow-hidden relative opacity-50">
+               <div className="absolute inset-0 flex items-center whitespace-nowrap animate-[marquee_20s_linear_infinite]">
+                   <span className="mx-4">CONNECTING TO GEMINI NEURAL NET...</span>
+                   <span className="mx-4">GEOSPATIAL DATA STREAM: ACTIVE</span>
+                   <span className="mx-4">AUDIO UPLINK: STANDBY</span>
+                   <span className="mx-4">SECURITY PROTOCOLS: ENGAGED</span>
+               </div>
+          </div>
+          <div className="flex items-center gap-4">
+              <span className="hidden md:inline">LATENCY: 14MS</span>
+              <span className="text-zinc-500">MEM: 128MB</span>
+          </div>
+      </footer>
     </div>
   );
 };
-
 export default App;

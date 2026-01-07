@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, VibeState, Coordinates } from '../types';
+import { SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, VibeState, Coordinates, Itinerary } from '../types';
 import { searchLocalBusinesses, getFeaturedBusinesses } from '../services/searchService';
 import { getAiSuggestions, analyzeImageAndSearch, generateVibeQuery } from '../services/insightService';
 import { speakDescription } from '../services/audioGenService';
@@ -50,6 +50,9 @@ export const useAppController = () => {
     const [isSynthesizerOpen, setIsSynthesizerOpen] = useState(false);
     const [isSynthesizing, setIsSynthesizing] = useState(false);
 
+    // Itinerary / Mission
+    const [activeItinerary, setActiveItinerary] = useState<Itinerary | null>(null);
+
     const [showDetailModal, setShowDetailModal] = useState(false);
 
     const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
@@ -96,6 +99,7 @@ export const useAppController = () => {
         setActiveTab(Tab.SEARCH);
         setState(s => ({ ...s, isSearching: true, query, error: null, selectedBusinessId: null }));
         setShowDetailModal(false);
+        setActiveItinerary(null); // Clear itinerary on new search
         setThemeClass(getThemeForQuery(query));
         setAiAnalysisResult(null); 
         
@@ -152,6 +156,12 @@ export const useAppController = () => {
     const handleOpenDetail = (id: string) => {
         setState(s => ({ ...s, selectedBusinessId: id }));
         setShowDetailModal(true);
+    };
+
+    const handlePlotItinerary = (itinerary: Itinerary) => {
+        setActiveItinerary(itinerary);
+        setViewMode(ViewMode.MAP); // Force map view
+        setIsCuratorOpen(false); // Close panel to show map
     };
 
     const handleRescan = useCallback((customLocation?: Coordinates) => {
@@ -220,6 +230,7 @@ export const useAppController = () => {
         comparisonResult,
         isComparing,
         setComparisonResult,
+        activeItinerary,
         handlers: {
             handleSearch,
             handleSpeak,
@@ -235,7 +246,8 @@ export const useAppController = () => {
             handleWeatherToggle,
             toggleComparison,
             removeFromComparison,
-            runComparison
+            runComparison,
+            handlePlotItinerary
         }
     };
 };
