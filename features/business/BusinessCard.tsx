@@ -46,7 +46,7 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
       onMouseEnter={() => onHover(business.id)}
       onMouseLeave={() => onHover(null)}
       className={`
-        relative group cursor-pointer overflow-hidden transition-all duration-300
+        relative group cursor-pointer overflow-hidden transition-all duration-300 shrink-0
         ${isSelected 
             ? 'bg-zinc-900/80 border-l-4 border-l-primary border-y border-r border-zinc-800' 
             : 'bg-black border-l-4 border-l-zinc-800 border-y border-r border-transparent hover:border-zinc-800 hover:bg-zinc-900/20'}
@@ -57,7 +57,7 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
       )}
 
-      <div className="flex h-32 relative z-10">
+      <div className="flex h-36 relative z-10">
         {/* Left: Image Data Block */}
         <div className="w-24 md:w-32 relative shrink-0">
             {business.photos?.[0] ? (

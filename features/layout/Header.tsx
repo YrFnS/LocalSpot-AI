@@ -4,7 +4,6 @@ import { SearchBar } from '../search/SearchBar';
 import { FilterBar } from '../search/FilterBar';
 import { CategorySelector } from '../discovery/CategorySelector';
 import { AudioVisualizer } from '../visualization/AudioVisualizer';
-import { ContextHud } from '../context/ContextHud';
 import { Tab, ViewMode, WeatherState, FilterState } from '../../types';
 
 interface HeaderProps {
@@ -62,10 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <h1 className="text-lg font-bold tracking-tighter hidden md:block text-white">LOCALSPOT</h1>
                 </div>
 
-                <div className="flex-1 max-w-2xl flex items-stretch h-10 gap-2">
-                    <div className="hidden lg:block h-full">
-                        <ContextHud weather={weather} onWeatherToggle={handlers.handleWeatherToggle} locationName={locationLabel} />
-                    </div>
+                <div className="flex-1 max-w-3xl flex items-stretch h-10 gap-2">
                     <div className="flex-1">
                         <SearchBar
                             onSearch={(q) => { playScan(); handlers.handleSearch(q); }}
