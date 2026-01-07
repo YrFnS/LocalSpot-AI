@@ -8,21 +8,40 @@ export const mapAiResponseToBusiness = (
     index: number, 
     userLocation: Coordinates | null
 ): Business => {
-    // Fallback location jitter if AI fails to extract exact coords or returns duplicates
-    const lat = item.latitude || (userLocation?.latitude || 0) + (Math.random() * 0.01 - 0.005);
-    const lng = item.longitude || (userLocation?.longitude || 0) + (Math.random() * 0.01 - 0.005);
+    // 1. LOCATION LOGIC
+    // Only use jitter fallback if the AI completely failed to return coordinates.
+    // The prompt is now engineered to return them, so this fallback should rarely trigger.
+    let lat = item.latitude;
+    let lng = item.longitude;
+    let isRealLocation = true;
+
+    if (!lat || !lng || (lat === 0 && lng === 0)) {
+        isRealLocation = false;
+        // Fallback: Random jitter around user to ensure it appears on map (better than null)
+        lat = (userLocation?.latitude || 0) + (Math.random() * 0.02 - 0.01);
+        lng = (userLocation?.longitude || 0) + (Math.random() * 0.02 - 0.01);
+    }
     const bizLocation = { latitude: lat, longitude: lng };
 
-    // Use extracted photo if available, otherwise fallback to curated aesthetic photos
-    let photos = getPhotosForType(item.type || 'default');
+    // 2. IMAGE LOGIC
+    // Strict validation on photoUri. Google Grounding often returns non-image URLs.
+    let photos: {name: string, widthPx: number, heightPx: number, authorAttributions: any[]}[] = [];
     
-    if (item.photoUri && typeof item.photoUri === 'string' && item.photoUri.startsWith('http')) {
+    const isValidImage = (url: string) => {
+        if (!url || typeof url !== 'string') return false;
+        return url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null || url.includes('images.unsplash.com') || url.includes('googleusercontent.com');
+    };
+
+    if (item.photoUri && isValidImage(item.photoUri)) {
         photos = [{
             name: item.photoUri,
             widthPx: 800, 
             heightPx: 600,
             authorAttributions: []
         }];
+    } else {
+        // High-quality aesthetic fallback
+        photos = getPhotosForType(item.type || 'default');
     }
 
     // Infer trend based on crowd level (fake logic for demo)
@@ -32,7 +51,7 @@ export const mapAiResponseToBusiness = (
         id: `biz-${index}-${Date.now()}`,
         name: item.name,
         description: item.description,
-        types: [item.type],
+        types: [item.type || "Point of Interest"],
         priceLevel: item.price || "$$",
         address: item.address || "Local",
         location: bizLocation,
@@ -42,7 +61,7 @@ export const mapAiResponseToBusiness = (
         vibe: item.vibe || "Local",
         bestFor: item.bestFor || [],
         openNow: item.openNow !== undefined ? item.openNow : true, 
-        verified: Math.random() > 0.8,
+        verified: isRealLocation && Math.random() > 0.8, // Only verify if we got real coords
         phoneNumber: "(555) Local-01",
         hours: "10:00 AM - 10:00 PM",
         matchScore: item.matchScore || Math.floor(Math.random() * 40) + 60,

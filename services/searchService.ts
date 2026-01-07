@@ -34,22 +34,34 @@ export const searchLocalBusinesses = async (
     const weatherContext = weather ? getWeatherDescription(weather) : "Unknown";
 
     // STEP 1: Grounded Search
+    // We explicitly ask for Lat/Lng in the text output because grounding chunks aren't always available in the response text structure.
     const contextualQuery = `${query} (Context: ${timeContext}, ${weatherContext})`;
 
     const groundResponse = await ai.models.generateContent({
       model: groundModel,
-      contents: `Find at least 20 distinct businesses for "${contextualQuery}" near ${userLocation ? `${userLocation.latitude},${userLocation.longitude}` : 'me'}. 
-      Return a list including address, rating, review count, open status, and A PHOTO/IMAGE for each place if available (in Markdown format).`,
+      contents: `
+      Find at least 15 distinct businesses for "${contextualQuery}" near ${userLocation ? `${userLocation.latitude},${userLocation.longitude}` : 'me'}. 
+      
+      CRITICAL OUTPUT RULES:
+      1. For EVERY business, you MUST explicitly state its exact "Latitude" and "Longitude" in the text description.
+      2. You MUST include the full street address.
+      3. Try to find a specific "Image URL" from the web for each place if possible.
+      4. Provide a rating and review count.
+      
+      Format each entry clearly so it can be parsed.
+      `,
       config: {
-        tools: [{ googleMaps: {} }],
+        // We use both Google Maps (for location data) and Google Search (for finding image URLs/Websites)
+        tools: [{ googleMaps: {} }, { googleSearch: {} }],
         toolConfig: retrievalConfig ? { retrievalConfig } : undefined, 
-        systemInstruction: `Current Time: ${timeContext}. Weather: ${weatherContext}. Find REAL places. Prioritize density and variety. You MUST attempt to include an image/photo for every place found.`,
+        systemInstruction: `You are a Local Guide. Your top priority is LOCATION ACCURACY. Always print the numeric Latitude and Longitude for every result found.`,
       },
     });
 
     const rawText = groundResponse.text || "";
 
     // STEP 2: Structure Data & AI Inference
+    // We pass the raw text which now hopefully contains coords, and ask the stronger model to extract them.
     const structuredResponse = await ai.models.generateContent({
         model: structureModel,
         contents: `
@@ -64,12 +76,12 @@ export const searchLocalBusinesses = async (
 
         TASK:
         1. Extract business details into JSON.
-        2. Infer a short "Vibe" (e.g., "Cozy", "Industrial").
-        3. Calculate a "matchScore" (0-100) based on how well this place fits the User's Query and current Weather/Time context.
-        4. If the source text contains an image URL (often in markdown ![alt](url)), extract it to 'photoUri'.
-        5. ESTIMATE "crowdLevel" (0-100) and "waitEstimate" (minutes) based on the business type and current time.
-        6. GENERATE 3-5 'menuItems' (signature dishes/drinks/activities) with name, price (approx), and short description.
-        7. If the place is a Restaurant/Bar/Cafe, GENERATE 'slots' based on likely busyness.
+        2. CRITICAL: Extract "latitude" and "longitude" as numbers. If they are in the text, use them. If not, do NOT invent them (leave as null).
+        3. Extract "photoUri" if a valid image URL is found in the text.
+        4. Infer a short "Vibe" (e.g., "Cozy", "Industrial").
+        5. Calculate a "matchScore" (0-100) based on relevance.
+        6. ESTIMATE "crowdLevel" (0-100) and "waitEstimate" (minutes).
+        7. GENERATE 3-5 'menuItems' (signature dishes/drinks).
         
         SCHEMA:
         Array<{
@@ -78,15 +90,15 @@ export const searchLocalBusinesses = async (
             type: string, 
             price: string, 
             address: string,
-            latitude: number,
-            longitude: number,
+            latitude: number | null,
+            longitude: number | null,
             rating: number,
             ratingCount: number,
             vibe: string, 
             bestFor: string[],
             openNow: boolean,
             matchScore: number,
-            photoUri: string,
+            photoUri: string | null,
             crowdLevel: number,
             waitEstimate: number,
             menuItems: Array<{name: string, price: string, description: string, tags: string[]}>,
