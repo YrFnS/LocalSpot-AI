@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import { Business, Coordinates, Itinerary } from '../../../types';
 
 /**
@@ -13,7 +13,7 @@ export const useUserMarker = (
     const userMarkerRef = useRef<maplibregl.Marker | null>(null);
 
     useEffect(() => {
-        if (!mapInstance || !userLocation) return;
+        if (!mapInstance || !userLocation || !maplibregl.Marker) return;
         
         const el = document.createElement('div');
         el.className = 'user-marker';
@@ -49,7 +49,7 @@ export const useBusinessMarkers = (
     const markersRef = useRef<{ [key: string]: maplibregl.Marker }>({});
 
     useEffect(() => {
-        if (!mapInstance) return;
+        if (!mapInstance || !maplibregl.Marker) return;
 
         // Cleanup removed businesses
         Object.keys(markersRef.current).forEach(id => {

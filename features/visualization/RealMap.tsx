@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Business, Coordinates, Itinerary } from '../../types';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import { MapUI } from './map/MapUI';
 import { 
     useBusinessMarkers, 
@@ -41,6 +41,12 @@ export const RealMap: React.FC<RealMapProps> = ({
   // --- Map Initialization ---
   useEffect(() => {
     if (mapInstance.current || !mapContainer.current) return;
+    
+    // Safety check for maplibregl availability
+    if (!maplibregl.Map) {
+        console.error("MapLibre GL not loaded correctly");
+        return;
+    }
 
     const defaultCenter: [number, number] = userLocation ? [userLocation.longitude, userLocation.latitude] : [-122.4194, 37.7749];
 
