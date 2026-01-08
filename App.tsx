@@ -1,8 +1,5 @@
 
 import React from 'react';
-import RadarMap from './features/visualization/RadarMap';
-import { RealMap } from './features/visualization/RealMap';
-import { BusinessGrid } from './features/visualization/BusinessGrid';
 import { BusinessDetailModal } from './features/business/BusinessDetailModal';
 import { OracleOverlay } from './features/live/OracleOverlay';
 import { CuratorPanel } from './features/curator/CuratorPanel';
@@ -14,7 +11,8 @@ import { SignalBoot } from './features/visualization/SignalBoot';
 import { Header } from './features/layout/Header';
 import { Sidebar } from './features/layout/Sidebar';
 import { Footer } from './features/layout/Footer';
-import { useLiveSession } from './hooks/useLiveSession';
+import { Viewport } from './features/visualization/Viewport';
+import { useLiveSession } from './features/live/useLiveSession';
 import { useAppController } from './hooks/useAppController';
 import { useSoundFX } from './hooks/useSoundFX';
 import { ViewMode } from './types';
@@ -65,7 +63,7 @@ const App: React.FC = () => {
   } = useAppController();
 
   const playFunctions = useSoundFX();
-  const { playClick, playHover, playScan, playSuccess } = playFunctions;
+  const { playClick, playSuccess } = playFunctions;
 
   const handleLiveToolCall = async (name: string, args: any) => {
       if (name === 'searchMap' && args.query) {
@@ -86,44 +84,6 @@ const App: React.FC = () => {
   };
 
   const selectedBusiness = handlers.getSelectedBusiness();
-
-  const renderMainContent = () => {
-      if (viewMode === ViewMode.GRID) {
-          return (
-             <BusinessGrid 
-                businesses={displayedList} 
-                onSelect={(id) => { playClick(); handlers.handleSelectBusiness(id); }}
-                selectedId={state.selectedBusinessId} 
-                onHover={(id) => { if (id && id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
-             />
-          );
-      }
-      if (viewMode === ViewMode.MAP) {
-          return (
-              <RealMap 
-                userLocation={state.userLocation} 
-                businesses={displayedList} 
-                onSelect={(id) => { playClick(); handlers.handleSelectBusiness(id); }}
-                selectedId={state.selectedBusinessId} 
-                hoveredId={hoveredBusinessId}
-                setHoveredId={(id) => { if (id && id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
-                onRescan={() => { playScan(); handlers.handleRescan(); }}
-                activeItinerary={activeItinerary}
-              />
-          );
-      }
-      return (
-        <RadarMap 
-            userLocation={state.userLocation} 
-            businesses={displayedList} 
-            selectedId={state.selectedBusinessId} 
-            onSelect={(id) => { playClick(); handlers.handleSelectBusiness(id); }}
-            onRescan={() => { playScan(); handlers.handleRescan(); }}
-            hoveredId={hoveredBusinessId}
-            setHoveredId={(id) => { if (id && id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
-        />
-      );
-  };
 
   const formatCoord = (val: number, type: 'lat' | 'lng') => {
     const abs = Math.abs(val).toFixed(3);
@@ -158,14 +118,14 @@ const App: React.FC = () => {
       <VisionModal 
          isOpen={isVisionOpen} 
          onClose={() => setIsVisionOpen(false)} 
-         onAnalyze={(img) => { playScan(); handleVisionAnalyze(img); }}
+         onAnalyze={(img) => { playFunctions.playScan(); handleVisionAnalyze(img); }}
          isAnalyzing={isVisionAnalyzing}
       />
 
       <VibeSynthesizer 
          isOpen={isSynthesizerOpen} 
          onClose={() => setIsSynthesizerOpen(false)} 
-         onSynthesize={(v) => { playScan(); handleVibeSearch(v); }}
+         onSynthesize={(v) => { playFunctions.playScan(); handleVibeSearch(v); }}
          isProcessing={isSynthesizing} 
       />
 
@@ -173,7 +133,7 @@ const App: React.FC = () => {
           <CompareTray 
              items={comparisonList} 
              onRemove={handlers.removeFromComparison} 
-             onAnalyze={() => { playScan(); handlers.runComparison(); }}
+             onAnalyze={() => { playFunctions.playScan(); handlers.runComparison(); }}
              isAnalyzing={isComparing} 
           />
       )}
@@ -227,7 +187,16 @@ const App: React.FC = () => {
         />
 
         <div className="flex-1 relative bg-transparent overflow-hidden">
-            {renderMainContent()}
+            <Viewport
+                viewMode={viewMode}
+                displayedList={displayedList}
+                state={state}
+                hoveredBusinessId={hoveredBusinessId}
+                activeItinerary={activeItinerary}
+                handlers={handlers}
+                setHoveredBusinessId={setHoveredBusinessId}
+                playFunctions={playFunctions}
+            />
             
             {state.isSearching && viewMode !== ViewMode.GRID && (
                 <div className="absolute inset-0 pointer-events-none z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">

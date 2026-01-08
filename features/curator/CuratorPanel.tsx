@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Business, Itinerary } from '../../types';
-import { generateItinerary } from '../../services/itineraryService';
+import { generateItinerary } from './itineraryService';
 
 interface CuratorPanelProps {
   isOpen: boolean;
