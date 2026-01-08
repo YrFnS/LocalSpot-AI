@@ -107,5 +107,29 @@ export const useSoundFX = () => {
          } catch(e) {}
     }, [getContext]);
 
-    return { playHover, playClick, playScan, playSuccess, playError, playNav };
+    // 7. Shutter (Camera snap)
+    const playShutter = useCallback(() => {
+        try {
+            const ctx = getContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < output.length; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+            const noise = ctx.createBufferSource();
+            noise.buffer = noiseBuffer;
+            const noiseGain = ctx.createGain();
+            
+            noiseGain.gain.setValueAtTime(0.5, ctx.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+            
+            noise.connect(noiseGain);
+            noiseGain.connect(ctx.destination);
+            noise.start();
+        } catch(e) {}
+    }, [getContext]);
+
+    return { playHover, playClick, playScan, playSuccess, playError, playNav, playShutter };
 };
