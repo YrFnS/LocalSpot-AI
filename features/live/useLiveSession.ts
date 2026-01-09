@@ -7,10 +7,21 @@ interface UseLiveSessionProps {
   onToolCall: (name: string, args: any) => Promise<any>;
 }
 
+export interface LiveTranscript {
+    id: string;
+    role: 'user' | 'model';
+    text: string;
+    isComplete: boolean;
+}
+
 export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false); // Model is speaking
   const [volume, setVolume] = useState(0); // For visualizer
+  
+  // Transcription State
+  const [transcripts, setTranscripts] = useState<LiveTranscript[]>([]);
+  const [realtimeText, setRealtimeText] = useState<{role: 'user'|'model', text: string} | null>(null);
 
   const ai = useRef(new GoogleGenAI({ apiKey: process.env.API_KEY })).current;
   const audioContext = useRef<AudioContext | null>(null);
@@ -18,7 +29,9 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
   const processor = useRef<ScriptProcessorNode | null>(null);
   const nextStartTime = useRef<number>(0);
   const streamRef = useRef<MediaStream | null>(null);
-  const sessionRef = useRef<any>(null); // To hold the live session
+  
+  // Buffer for current turn text
+  const textBuffer = useRef<{user: string, model: string}>({ user: '', model: '' });
 
   // Tools Definition
   const searchTool: FunctionDeclaration = {
@@ -59,6 +72,8 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } },
           },
           tools: [{ functionDeclarations: [searchTool] }],
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
           systemInstruction: `You are "The Oracle", the voice of LocalSpot. 
           You are a cool, avant-garde local guide. 
           Keep responses concise, punchy, and helpful. 
@@ -105,7 +120,43 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
             processor.current.connect(ctx.destination);
           },
           onmessage: async (msg: LiveServerMessage) => {
-            // Handle Tool Calls
+            // 1. Handle Transcription
+            const outText = msg.serverContent?.outputTranscription?.text;
+            const inpText = msg.serverContent?.inputTranscription?.text;
+
+            if (outText) {
+                textBuffer.current.model += outText;
+                setRealtimeText({ role: 'model', text: textBuffer.current.model });
+            }
+            if (inpText) {
+                textBuffer.current.user += inpText;
+                setRealtimeText({ role: 'user', text: textBuffer.current.user });
+            }
+
+            if (msg.serverContent?.turnComplete) {
+                // Commit transcripts to history
+                if (textBuffer.current.user) {
+                    setTranscripts(prev => [...prev, { 
+                        id: Date.now() + '-u', 
+                        role: 'user', 
+                        text: textBuffer.current.user, 
+                        isComplete: true 
+                    }]);
+                }
+                if (textBuffer.current.model) {
+                    setTranscripts(prev => [...prev, { 
+                        id: Date.now() + '-m', 
+                        role: 'model', 
+                        text: textBuffer.current.model, 
+                        isComplete: true 
+                    }]);
+                }
+                textBuffer.current = { user: '', model: '' };
+                setRealtimeText(null);
+                setIsSpeaking(false);
+            }
+
+            // 2. Handle Tool Calls
             if (msg.toolCall) {
                 console.log("Tool Call Received:", msg.toolCall);
                 for (const fc of msg.toolCall.functionCalls) {
@@ -127,16 +178,12 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
                 }
             }
 
-            // Handle Audio Output
+            // 3. Handle Audio Output
             const modelAudio = msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (modelAudio) {
                 setIsSpeaking(true);
                 const float32 = base64ToFloat32(modelAudio);
                 playAudioChunk(float32);
-            }
-            
-            if (msg.serverContent?.turnComplete) {
-                setIsSpeaking(false);
             }
           },
           onclose: () => {
@@ -150,8 +197,6 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
           }
         }
       });
-      
-      sessionRef.current = sessionPromise;
 
     } catch (e) {
       console.error("Failed to connect live session", e);
@@ -193,7 +238,10 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
      setIsConnected(false);
      setIsSpeaking(false);
      setVolume(0);
+     setTranscripts([]);
+     setRealtimeText(null);
+     textBuffer.current = { user: '', model: '' };
   };
 
-  return { connect, disconnect, isConnected, isSpeaking, volume };
+  return { connect, disconnect, isConnected, isSpeaking, volume, transcripts, realtimeText };
 };

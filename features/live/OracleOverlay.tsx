@@ -1,16 +1,35 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { LiveTranscript } from '../../hooks/useLiveSession';
 
 interface OracleOverlayProps {
   isOpen: boolean;
   onClose: () => void;
   isConnected: boolean;
   isSpeaking: boolean;
-  volume: number; // 0 to ~1
+  volume: number;
+  transcripts: LiveTranscript[];
+  realtimeText: { role: 'user' | 'model', text: string } | null;
 }
 
-export const OracleOverlay: React.FC<OracleOverlayProps> = ({ isOpen, onClose, isConnected, isSpeaking, volume }) => {
+export const OracleOverlay: React.FC<OracleOverlayProps> = ({ 
+    isOpen, 
+    onClose, 
+    isConnected, 
+    isSpeaking, 
+    volume,
+    transcripts,
+    realtimeText 
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll transcript
+  useEffect(() => {
+      if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+  }, [transcripts, realtimeText]);
 
   // Animation Loop
   useEffect(() => {
@@ -36,7 +55,6 @@ export const OracleOverlay: React.FC<OracleOverlayProps> = ({ isOpen, onClose, i
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
       ctx.lineWidth = 1;
       const gridSize = 50;
-      // Perspective grid logic simplified for 2D canvas
       for(let x = 0; x < width; x+=gridSize) {
           ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
       }
@@ -145,7 +163,7 @@ export const OracleOverlay: React.FC<OracleOverlayProps> = ({ isOpen, onClose, i
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl animate-in fade-in duration-500 flex flex-col items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl animate-in fade-in duration-500 flex flex-col items-center justify-center overflow-hidden font-sans">
         <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
         
         {/* AR Overlay UI */}
@@ -167,20 +185,44 @@ export const OracleOverlay: React.FC<OracleOverlayProps> = ({ isOpen, onClose, i
                  </div>
             </div>
 
-            {/* Center Status */}
-            <div className="relative z-10 flex flex-col items-center gap-2 mt-[20vh]">
-                 <div className={`
-                    text-4xl md:text-6xl font-black tracking-tighter uppercase transition-colors duration-300
-                    ${isSpeaking ? 'text-white drop-shadow-[0_0_20px_rgba(249,115,22,0.8)]' : 'text-zinc-600'}
-                 `}>
-                    {isSpeaking ? 'TRANSMITTING' : (isConnected ? 'LISTENING' : 'CONNECTING')}
-                 </div>
-                 <div className="h-px w-32 bg-zinc-800 relative overflow-hidden">
-                     <div className="absolute inset-0 bg-primary/50 w-1/2 animate-[scan-vertical_1s_linear_infinite_reverse]" style={{ transform: 'translateX(-100%)' }}></div>
-                 </div>
-                 <p className="font-mono text-xs text-zinc-500 animate-pulse">
-                     {isSpeaking ? '>> INCOMING_VOICE_DATA' : '>> AWAITING_USER_INPUT'}
-                 </p>
+            {/* Transcript Log (Center-Bottom) */}
+            <div className="absolute bottom-32 left-0 right-0 max-w-2xl mx-auto px-4 pointer-events-auto">
+                <div 
+                    ref={scrollRef}
+                    className="h-48 overflow-y-auto custom-scrollbar flex flex-col gap-2 mask-linear-fade"
+                    style={{ maskImage: 'linear-gradient(to bottom, transparent, black 20%)' }}
+                >
+                    {/* History */}
+                    {transcripts.map((t) => (
+                        <div key={t.id} className={`flex ${t.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}>
+                            <div className={`
+                                max-w-[80%] px-3 py-2 rounded-sm border text-xs font-mono leading-relaxed
+                                ${t.role === 'user' 
+                                    ? 'bg-zinc-900/80 border-zinc-700 text-zinc-300' 
+                                    : 'bg-primary/10 border-primary/30 text-primary-100'}
+                            `}>
+                                <span className="opacity-50 text-[9px] block mb-0.5 uppercase tracking-wider">
+                                    {t.role === 'user' ? 'USER_INPUT' : 'ORACLE_RESP'}
+                                </span>
+                                {t.text}
+                            </div>
+                        </div>
+                    ))}
+                    
+                    {/* Realtime Typing Buffer */}
+                    {realtimeText && (
+                        <div className={`flex ${realtimeText.role === 'user' ? 'justify-end' : 'justify-start'} animate-pulse`}>
+                            <div className={`
+                                max-w-[80%] px-3 py-2 rounded-sm border text-xs font-mono leading-relaxed border-dashed
+                                ${realtimeText.role === 'user' 
+                                    ? 'border-zinc-500 text-zinc-400' 
+                                    : 'border-primary/50 text-primary'}
+                            `}>
+                                {realtimeText.text}<span className="inline-block w-2 h-4 align-middle bg-current ml-1 animate-[blink_1s_infinite]"></span>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Bottom Controls */}

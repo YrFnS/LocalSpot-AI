@@ -19,10 +19,11 @@ export const generateItinerary = async (
       1. PRIORITIZE using businesses from the provided 'Context List' if they fit.
       2. If no context fits, suggest a generic activity (e.g. "Walk in the park").
       3. The flow must be logical (e.g. Activity -> Dinner -> Drinks).
-      4. Return pure JSON.
+      4. Consider travel time and crowd levels when sequencing.
+      5. Return pure JSON.
     `;
 
-    // Use Gemini 3 Pro for complex reasoning and planning tasks
+    // Use Gemini 3 Pro with Thinking Config for complex reasoning
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: `
@@ -47,7 +48,8 @@ export const generateItinerary = async (
       `,
       config: {
         responseMimeType: 'application/json',
-        systemInstruction: systemInstruction
+        systemInstruction: systemInstruction,
+        thinkingConfig: { thinkingBudget: 1024 }, // Enable thinking for better logistic planning
       }
     });
 

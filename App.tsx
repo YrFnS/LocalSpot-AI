@@ -73,7 +73,15 @@ const App: React.FC = () => {
       return { success: false };
   };
 
-  const { connect: connectLive, disconnect: disconnectLive, isConnected: isLiveConnected, isSpeaking: isLiveSpeaking, volume: liveVolume } = useLiveSession({
+  const { 
+      connect: connectLive, 
+      disconnect: disconnectLive, 
+      isConnected: isLiveConnected, 
+      isSpeaking: isLiveSpeaking, 
+      volume: liveVolume,
+      transcripts,
+      realtimeText
+  } = useLiveSession({
       onToolCall: handleLiveToolCall
   });
 
@@ -104,7 +112,15 @@ const App: React.FC = () => {
       <div className="absolute inset-0 z-[1] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] pointer-events-none"></div>
       <div className="absolute inset-0 z-[1] shadow-[inset_0_0_100px_rgba(0,0,0,0.8)] pointer-events-none"></div>
       
-      <OracleOverlay isOpen={isOracleOpen} onClose={toggleOracle} isConnected={isLiveConnected} isSpeaking={isLiveSpeaking} volume={liveVolume} />
+      <OracleOverlay 
+        isOpen={isOracleOpen} 
+        onClose={toggleOracle} 
+        isConnected={isLiveConnected} 
+        isSpeaking={isLiveSpeaking} 
+        volume={liveVolume}
+        transcripts={transcripts}
+        realtimeText={realtimeText}
+      />
       
       <CuratorPanel 
         isOpen={isCuratorOpen} 
