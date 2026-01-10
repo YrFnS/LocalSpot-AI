@@ -37,6 +37,10 @@ export const RealMap: React.FC<RealMapProps> = ({
   // Local View State for UI
   const [mapCenter, setMapCenter] = useState<Coordinates | null>(null);
   const [pitch, setPitch] = useState(45);
+  
+  // Flyover State
+  const [isFlying, setIsFlying] = useState(false);
+  const flyInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // --- Map Initialization ---
   useEffect(() => {
@@ -150,6 +154,53 @@ export const RealMap: React.FC<RealMapProps> = ({
   useRouteLayer(mapInstance.current, activeItinerary);
   useMapCamera(mapInstance.current, selectedId, businesses);
 
+  // --- Flyover Logic ---
+  const stopFlyover = () => {
+      if (flyInterval.current) {
+          clearInterval(flyInterval.current);
+          flyInterval.current = null;
+      }
+      setIsFlying(false);
+  };
+
+  const startFlyover = () => {
+      if (!mapInstance.current || !activeItinerary || activeItinerary.items.length === 0) return;
+      
+      setIsFlying(true);
+      let step = 0;
+      const items = activeItinerary.items;
+
+      const flyToStep = (idx: number) => {
+          if (idx >= items.length) {
+              stopFlyover();
+              return;
+          }
+          const item = items[idx];
+          if (item.business?.location) {
+              mapInstance.current?.flyTo({
+                  center: [item.business.location.longitude, item.business.location.latitude],
+                  zoom: 17,
+                  pitch: 65,
+                  bearing: (idx * 45) % 360, // Rotate viewing angle for each stop
+                  speed: 0.8,
+                  curve: 1.2,
+                  essential: true
+              });
+              onSelect(item.business.id); // Open detail/select
+          }
+      };
+
+      // Initial Fly
+      flyToStep(0);
+      step++;
+
+      // Schedule next steps (Allow time for flight + viewing)
+      flyInterval.current = setInterval(() => {
+          flyToStep(step);
+          step++;
+      }, 6000); // 6 seconds per stop
+  };
+
   // --- Handlers ---
   const handleZoom = (dir: 'in' | 'out') => {
       if (!mapInstance.current) return;
@@ -191,6 +242,8 @@ export const RealMap: React.FC<RealMapProps> = ({
             onRecenter={handleRecenter}
             onPitchToggle={handlePitch}
             onZoom={handleZoom}
+            isFlying={isFlying}
+            onToggleFlyover={isFlying ? stopFlyover : startFlyover}
         />
     </div>
   );

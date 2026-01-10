@@ -11,6 +11,8 @@ interface MapUIProps {
   onRecenter: () => void;
   onPitchToggle: () => void;
   onZoom: (dir: 'in' | 'out') => void;
+  isFlying?: boolean;
+  onToggleFlyover?: () => void;
 }
 
 export const MapUI: React.FC<MapUIProps> = ({
@@ -21,7 +23,9 @@ export const MapUI: React.FC<MapUIProps> = ({
   onSearchThisArea,
   onRecenter,
   onPitchToggle,
-  onZoom
+  onZoom,
+  isFlying,
+  onToggleFlyover
 }) => {
   return (
     <>
@@ -52,6 +56,30 @@ export const MapUI: React.FC<MapUIProps> = ({
             <span>{activeItinerary.items.length} WAYPOINTS</span>
             <span>EST. TIME: 4H</span>
           </div>
+
+          {onToggleFlyover && (
+              <button 
+                onClick={onToggleFlyover}
+                className={`
+                    mt-2 flex items-center gap-2 px-3 py-1 rounded-sm text-[9px] font-mono font-bold uppercase tracking-widest transition-all
+                    ${isFlying 
+                        ? 'bg-red-900/50 text-red-400 border border-red-500/30 hover:bg-red-900' 
+                        : 'bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30'}
+                `}
+              >
+                  {isFlying ? (
+                      <>
+                        <span className="w-1.5 h-1.5 bg-red-500 rounded-sm"></span>
+                        ABORT_PLAYBACK
+                      </>
+                  ) : (
+                      <>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        INITIATE_FLYOVER
+                      </>
+                  )}
+              </button>
+          )}
         </div>
       )}
       
