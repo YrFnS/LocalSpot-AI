@@ -98,7 +98,7 @@ export const BusinessDetailRightCol: React.FC<BusinessDetailRightColProps> = ({
                      <div className="space-y-8">
                          {/* Inventory / Menu Recon */}
                          {business.menuItems && business.menuItems.length > 0 && (
-                            <MenuRecon items={business.menuItems} />
+                            <MenuRecon items={business.menuItems} vibe={business.vibe || 'Modern'} />
                          )}
 
                          {/* Concierge Terminal */}
