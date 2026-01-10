@@ -80,7 +80,8 @@ const App: React.FC = () => {
       isSpeaking: isLiveSpeaking, 
       volume: liveVolume,
       transcripts,
-      realtimeText
+      realtimeText,
+      sendVideoFrame
   } = useLiveSession({
       onToolCall: handleLiveToolCall
   });
@@ -120,6 +121,7 @@ const App: React.FC = () => {
         volume={liveVolume}
         transcripts={transcripts}
         realtimeText={realtimeText}
+        onSendFrame={sendVideoFrame}
       />
       
       <CuratorPanel 

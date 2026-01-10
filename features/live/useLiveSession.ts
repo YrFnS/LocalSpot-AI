@@ -29,6 +29,7 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
   const processor = useRef<ScriptProcessorNode | null>(null);
   const nextStartTime = useRef<number>(0);
   const streamRef = useRef<MediaStream | null>(null);
+  const sessionRef = useRef<Promise<any> | null>(null);
   
   // Buffer for current turn text
   const textBuffer = useRef<{user: string, model: string}>({ user: '', model: '' });
@@ -197,6 +198,8 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
           }
         }
       });
+      
+      sessionRef.current = sessionPromise;
 
     } catch (e) {
       console.error("Failed to connect live session", e);
@@ -222,6 +225,19 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
       nextStartTime.current = start + buffer.duration;
   };
 
+  const sendVideoFrame = (base64Image: string) => {
+      if (sessionRef.current) {
+          sessionRef.current.then(session => {
+              session.sendRealtimeInput({
+                  media: {
+                      mimeType: 'image/jpeg',
+                      data: base64Image
+                  }
+              });
+          });
+      }
+  };
+
   const disconnect = () => {
      if (streamRef.current) {
          streamRef.current.getTracks().forEach(t => t.stop());
@@ -241,7 +257,8 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
      setTranscripts([]);
      setRealtimeText(null);
      textBuffer.current = { user: '', model: '' };
+     sessionRef.current = null;
   };
 
-  return { connect, disconnect, isConnected, isSpeaking, volume, transcripts, realtimeText };
+  return { connect, disconnect, isConnected, isSpeaking, volume, transcripts, realtimeText, sendVideoFrame };
 };

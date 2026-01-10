@@ -1,7 +1,7 @@
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, FunctionDeclaration, Type } from "@google/genai";
-import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32 } from '../utils/audioStreamUtils';
+import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32 } from '../../utils/audioStreamUtils';
 
 interface UseLiveSessionProps {
   onToolCall: (name: string, args: any) => Promise<any>;
@@ -17,7 +17,7 @@ export interface LiveTranscript {
 export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false); 
-  const [volume, setVolume] = useState(0);
+  const [volume, setVolume] = useState(0); 
   
   // Transcription State
   const [transcripts, setTranscripts] = useState<LiveTranscript[]>([]);
@@ -29,10 +29,12 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
   const processor = useRef<ScriptProcessorNode | null>(null);
   const nextStartTime = useRef<number>(0);
   const streamRef = useRef<MediaStream | null>(null);
+  const sessionRef = useRef<Promise<any> | null>(null);
   
   // Buffer for current turn text
   const textBuffer = useRef<{user: string, model: string}>({ user: '', model: '' });
 
+  // Tools Definition
   const searchTool: FunctionDeclaration = {
     name: 'searchMap',
     description: 'Search for local businesses on the map based on user query.',
@@ -64,15 +66,16 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } }, 
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } },
           },
           tools: [{ functionDeclarations: [searchTool] }],
           inputAudioTranscription: {},
           outputAudioTranscription: {},
-          systemInstruction: `You are "The Oracle", the voice of LocalSpot. 
-          You are a cool, avant-garde local guide. 
-          Keep responses concise, punchy, and helpful. 
-          When the user asks to find something, ALWAYS call the 'searchMap' tool.`,
+          systemInstruction: `You are "The Oracle", an advanced AI guide for LocalSpot. 
+          You can see what the user sees when their vision uplink is active.
+          Be concise, witty, and helpful. 
+          If looking at a street, identify businesses or vibes.
+          When asked to find places, call the 'searchMap' tool.`,
         },
         callbacks: {
           onopen: () => {
@@ -110,7 +113,6 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
             processor.current.connect(ctx.destination);
           },
           onmessage: async (msg: LiveServerMessage) => {
-            // 1. Handle Transcription
             const outText = msg.serverContent?.outputTranscription?.text;
             const inpText = msg.serverContent?.inputTranscription?.text;
 
@@ -124,7 +126,6 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
             }
 
             if (msg.serverContent?.turnComplete) {
-                // Commit transcripts to history
                 if (textBuffer.current.user) {
                     setTranscripts(prev => [...prev, { 
                         id: Date.now() + '-u', 
@@ -146,9 +147,7 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
                 setIsSpeaking(false);
             }
 
-            // 2. Handle Tool Calls
             if (msg.toolCall) {
-                console.log("Tool Call Received:", msg.toolCall);
                 for (const fc of msg.toolCall.functionCalls) {
                     if (fc.name === 'searchMap') {
                         const args = fc.args as any;
@@ -167,7 +166,6 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
                 }
             }
 
-            // 3. Handle Audio Output
             const modelAudio = msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (modelAudio) {
                 setIsSpeaking(true);
@@ -186,6 +184,9 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
           }
         }
       });
+      
+      sessionRef.current = sessionPromise;
+
     } catch (e) {
       console.error("Failed to connect live session", e);
       setIsConnected(false);
@@ -206,6 +207,19 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
       nextStartTime.current = start + buffer.duration;
   };
 
+  const sendVideoFrame = (base64Image: string) => {
+      if (sessionRef.current) {
+          sessionRef.current.then(session => {
+              session.sendRealtimeInput({
+                  media: {
+                      mimeType: 'image/jpeg',
+                      data: base64Image
+                  }
+              });
+          });
+      }
+  };
+
   const disconnect = () => {
      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
      if (processor.current) processor.current.disconnect();
@@ -217,7 +231,8 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
      setTranscripts([]);
      setRealtimeText(null);
      textBuffer.current = { user: '', model: '' };
+     sessionRef.current = null;
   };
 
-  return { connect, disconnect, isConnected, isSpeaking, volume, transcripts, realtimeText };
+  return { connect, disconnect, isConnected, isSpeaking, volume, transcripts, realtimeText, sendVideoFrame };
 };
