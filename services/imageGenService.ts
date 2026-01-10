@@ -20,13 +20,8 @@ export const generateMenuVisual = async (
       contents: {
         parts: [{ text: prompt }],
       },
-      config: {
-        // No specific responseMimeType for image generation models in this SDK version usually, 
-        // but we rely on the response structure.
-      }
     });
 
-    // Iterate through parts to find the image
     const parts = response.candidates?.[0]?.content?.parts;
     if (parts) {
       for (const part of parts) {
@@ -40,4 +35,39 @@ export const generateMenuVisual = async (
     console.error("Menu Visual Gen Error:", error);
     return null;
   }
+};
+
+export const generateHistoryVisual = async (
+    visualPrompt: string,
+    era: string
+): Promise<string | null> => {
+    try {
+        const prompt = `
+            Old vintage photograph from the ${era}. 
+            Subject: ${visualPrompt}. 
+            Style: Sepia tone, film grain, scratches, slightly blurry edges, authentic historical aesthetic, 1900s photography. 
+            Street view, exterior shot.
+            No text, no watermarks.
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+                parts: [{ text: prompt }]
+            }
+        });
+
+        const parts = response.candidates?.[0]?.content?.parts;
+        if (parts) {
+            for (const part of parts) {
+                if (part.inlineData && part.inlineData.data) {
+                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                }
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error("History Visual Gen Error:", error);
+        return null;
+    }
 };

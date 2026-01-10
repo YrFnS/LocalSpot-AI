@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Business } from '../../types';
+import { ChronoLens } from './ChronoLens';
 
 interface BusinessDetailLeftColProps {
   business: Business;
@@ -14,6 +15,7 @@ export const BusinessDetailLeftCol: React.FC<BusinessDetailLeftColProps> = ({
     onSpeak 
 }) => {
     const [copied, setCopied] = useState(false);
+    const [isChronoActive, setIsChronoActive] = useState(false);
 
     const handleShare = () => {
         const text = `TARGET: ${business.name} // LOC: ${business.address}`;
@@ -24,31 +26,54 @@ export const BusinessDetailLeftCol: React.FC<BusinessDetailLeftColProps> = ({
 
     return (
         <div className="w-full md:w-[450px] bg-zinc-950/50 border-b md:border-b-0 md:border-r border-zinc-800 flex flex-col relative">
-            <div className="relative h-64 md:h-80 shrink-0 group overflow-hidden">
-                    {business.photos?.[0] ? (
-                        <>
-                        <img 
-                            src={business.photos[0].name} 
-                            className="w-full h-full object-cover filter grayscale contrast-125 brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700" 
-                            alt="Visual Intel"
-                        />
-                        <div className="crt-overlay absolute inset-0 opacity-50 pointer-events-none"></div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                        </>
-                    ) : (
-                        <div className="w-full h-full bg-zinc-900 flex items-center justify-center flex-col gap-2">
-                            <div className="w-16 h-16 border border-zinc-700 rounded-full flex items-center justify-center animate-pulse">
-                                <div className="w-12 h-12 border border-zinc-600 rounded-full"></div>
+            
+            {/* Visual Container */}
+            <div className="relative h-64 md:h-80 shrink-0 group overflow-hidden bg-black">
+                    {/* Standard Modern View */}
+                    <div className={`w-full h-full transition-opacity duration-700 ${isChronoActive ? 'opacity-0' : 'opacity-100'}`}>
+                        {business.photos?.[0] ? (
+                            <>
+                            <img 
+                                src={business.photos[0].name} 
+                                className="w-full h-full object-cover filter grayscale contrast-125 brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700" 
+                                alt="Visual Intel"
+                            />
+                            <div className="crt-overlay absolute inset-0 opacity-50 pointer-events-none"></div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                            </>
+                        ) : (
+                            <div className="w-full h-full bg-zinc-900 flex items-center justify-center flex-col gap-2">
+                                <div className="w-16 h-16 border border-zinc-700 rounded-full flex items-center justify-center animate-pulse">
+                                    <div className="w-12 h-12 border border-zinc-600 rounded-full"></div>
+                                </div>
+                                <span className="font-mono text-[10px] text-zinc-600 tracking-widest">NO OPTICAL FEED</span>
                             </div>
-                            <span className="font-mono text-[10px] text-zinc-600 tracking-widest">NO OPTICAL FEED</span>
-                        </div>
-                    )}
+                        )}
+                    </div>
+
+                    {/* Chrono Lens Layer */}
+                    <ChronoLens 
+                        business={business} 
+                        isActive={isChronoActive} 
+                        onToggle={() => setIsChronoActive(false)} 
+                    />
                     
-                    <div className="absolute top-4 left-4 bg-black/80 backdrop-blur px-2 py-1 border-l-2 border-primary">
-                        <span className="text-[10px] font-mono text-primary font-bold tracking-widest">IMG_SEQ_001</span>
+                    {/* Modern UI Overlays (Hide when Chrono Active) */}
+                    <div className={`absolute top-4 left-4 right-4 flex justify-between items-start transition-opacity duration-500 ${isChronoActive ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                        <div className="bg-black/80 backdrop-blur px-2 py-1 border-l-2 border-primary">
+                            <span className="text-[10px] font-mono text-primary font-bold tracking-widest">IMG_SEQ_001</span>
+                        </div>
+                        
+                        <button 
+                            onClick={() => setIsChronoActive(true)}
+                            className="bg-amber-900/20 hover:bg-amber-900/40 text-amber-500 border border-amber-600/30 px-3 py-1.5 rounded-sm flex items-center gap-2 backdrop-blur-md transition-all group/time"
+                        >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover/time:-rotate-180 transition-transform duration-500"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <span className="text-[9px] font-mono font-bold tracking-widest uppercase">CHRONO_LENS</span>
+                        </button>
                     </div>
                     
-                    <div className="absolute bottom-4 left-4 right-4">
+                    <div className={`absolute bottom-4 left-4 right-4 transition-opacity duration-500 ${isChronoActive ? 'opacity-0' : 'opacity-100'}`}>
                         <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter leading-none mb-2 uppercase transparent-text-stroke relative z-10">
                         {business.name}
                         </h2>
