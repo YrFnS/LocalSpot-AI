@@ -3,6 +3,7 @@ import React from 'react';
 import { Tab, ViewMode, Business, Itinerary } from '../../types';
 import { BusinessCard } from '../business/BusinessCard';
 import { MissionLog } from '../missions/MissionLog';
+import { SidebarTab } from './SidebarTab';
 
 interface SidebarProps {
     activeTab: Tab;
@@ -58,46 +59,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
             {/* Navigation Tabs - Hardware Switch Style */}
             <div className="flex border-b border-zinc-900 bg-zinc-950 p-1">
-                <button
+                <SidebarTab 
+                    isActive={activeTab === Tab.SEARCH}
                     onClick={() => handleTabChange(Tab.SEARCH)}
                     onMouseEnter={playHover}
-                    className={`flex-1 py-3 text-xs font-mono font-bold uppercase tracking-widest transition-all duration-300 relative overflow-hidden group ${activeTab === Tab.SEARCH ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
-                >
-                    <div className={`absolute inset-0 bg-primary transition-transform duration-300 origin-left ${activeTab === Tab.SEARCH ? 'scale-x-100' : 'scale-x-0'}`}></div>
-                    <div className={`absolute inset-0 bg-zinc-900 transition-transform duration-300 origin-left ${activeTab === Tab.SEARCH ? 'scale-x-0' : 'scale-x-100'}`}></div>
-                    <span className="relative z-10 flex items-center justify-center gap-2">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        DISCOVERY
-                    </span>
-                </button>
-
-                <button
+                    label="DISCOVERY"
+                    icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>}
+                    origin="left"
+                />
+                
+                <SidebarTab 
+                    isActive={activeTab === Tab.FAVORITES}
                     onClick={() => handleTabChange(Tab.FAVORITES)}
                     onMouseEnter={playHover}
-                    className={`flex-1 py-3 text-xs font-mono font-bold uppercase tracking-widest transition-all duration-300 relative overflow-hidden group ${activeTab === Tab.FAVORITES ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
-                >
-                    <div className={`absolute inset-0 bg-primary transition-transform duration-300 origin-bottom ${activeTab === Tab.FAVORITES ? 'scale-y-100' : 'scale-y-0'}`}></div>
-                    <div className={`absolute inset-0 bg-zinc-900 transition-transform duration-300 origin-bottom ${activeTab === Tab.FAVORITES ? 'scale-y-0' : 'scale-y-100'}`}></div>
-                    <span className="relative z-10 flex items-center justify-center gap-2">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-                        ARCHIVE
-                        <span className="opacity-60 font-normal">({favorites.length})</span>
-                    </span>
-                </button>
+                    label="ARCHIVE"
+                    subLabel={favorites.length.toString()}
+                    icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>}
+                    origin="bottom"
+                />
 
-                <button
+                <SidebarTab 
+                    isActive={activeTab === Tab.MISSIONS}
                     onClick={() => handleTabChange(Tab.MISSIONS)}
                     onMouseEnter={playHover}
-                    className={`flex-1 py-3 text-xs font-mono font-bold uppercase tracking-widest transition-all duration-300 relative overflow-hidden group ${activeTab === Tab.MISSIONS ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
-                >
-                    <div className={`absolute inset-0 bg-primary transition-transform duration-300 origin-right ${activeTab === Tab.MISSIONS ? 'scale-x-100' : 'scale-x-0'}`}></div>
-                    <div className={`absolute inset-0 bg-zinc-900 transition-transform duration-300 origin-right ${activeTab === Tab.MISSIONS ? 'scale-x-0' : 'scale-x-100'}`}></div>
-                    <span className="relative z-10 flex items-center justify-center gap-2">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                        MISSIONS
-                        <span className="opacity-60 font-normal">({missions.length})</span>
-                    </span>
-                </button>
+                    label="MISSIONS"
+                    subLabel={missions.length.toString()}
+                    icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>}
+                    origin="right"
+                />
             </div>
 
             {/* Tab Content Area */}
