@@ -1,6 +1,6 @@
 
 import { Business, Coordinates, WeatherState } from "../types";
-import { mapAiResponseToBusiness } from "../utils/mapper";
+import { mapAiResponseToBusiness } from "../features/business/businessMapper";
 import { getWeatherDescription } from "./weatherService";
 import { ai } from "./aiClient";
 

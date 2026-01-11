@@ -1,5 +1,6 @@
 
 import { useCallback, useRef } from 'react';
+import { getAudioContext } from '../utils/audioUtils';
 
 // Procedural Audio Engine for UI Sound Effects
 export const useSoundFX = () => {
@@ -7,7 +8,7 @@ export const useSoundFX = () => {
 
     const getContext = useCallback(() => {
         if (!ctxRef.current) {
-            ctxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            ctxRef.current = getAudioContext();
         }
         if (ctxRef.current.state === 'suspended') {
             ctxRef.current.resume();
@@ -73,11 +74,25 @@ export const useSoundFX = () => {
 
     // 4. Success (Major arpeggio)
     const playSuccess = useCallback(() => {
-        const now = 0;
-        setTimeout(() => playTone(523.25, 'sine', 0.2, 0.05), now);      // C5
-        setTimeout(() => playTone(659.25, 'sine', 0.2, 0.05), now + 100); // E5
-        setTimeout(() => playTone(783.99, 'sine', 0.3, 0.05), now + 200); // G5
-    }, [playTone]);
+        const ctx = getContext();
+        const now = ctx.currentTime;
+        // Use timeout relative to context time isn't precise with setTimeout but good enough for UI
+        // Better to schedule on context
+        const play = (f: number, t: number) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.setValueAtTime(f, t);
+            gain.gain.setValueAtTime(0.1, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(t);
+            osc.stop(t + 0.2);
+        };
+        play(523.25, now);
+        play(659.25, now + 0.1);
+        play(783.99, now + 0.2);
+    }, [getContext]);
 
     // 5. Error (Low buzz)
     const playError = useCallback(() => {
@@ -91,8 +106,6 @@ export const useSoundFX = () => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             
-            // White noise burst simulated with very randomized frequency modulation? 
-            // Simpler: just a high pitch short noise-like triangle
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(2000, ctx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.1);
@@ -111,8 +124,6 @@ export const useSoundFX = () => {
     const playShutter = useCallback(() => {
         try {
             const ctx = getContext();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
             const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate);
             const output = noiseBuffer.getChannelData(0);
             for (let i = 0; i < output.length; i++) {

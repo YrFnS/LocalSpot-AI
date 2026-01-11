@@ -4,6 +4,7 @@ import { SearchBar } from '../search/SearchBar';
 import { FilterBar } from '../search/FilterBar';
 import { CategorySelector } from '../discovery/CategorySelector';
 import { AudioVisualizer } from '../visualization/AudioVisualizer';
+import { ContextHud } from '../context/ContextHud';
 import { Tab, ViewMode, WeatherState, FilterState } from '../../types';
 
 interface HeaderProps {
@@ -55,12 +56,25 @@ export const Header: React.FC<HeaderProps> = ({
 
     return (
         <header className="z-50 border-b border-zinc-800 bg-background/80 backdrop-blur-md flex flex-col gap-0 relative shadow-2xl">
-            <div className="px-4 py-3 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 shrink-0">
-                    <div className="w-8 h-8 bg-gradient-to-br from-primary to-orange-600 rounded-sm flex items-center justify-center font-bold text-black font-mono shadow-[0_0_15px_rgba(249,115,22,0.5)] border border-white/20">LS</div>
-                    <h1 className="text-lg font-bold tracking-tighter hidden md:block text-white">LOCALSPOT</h1>
+            {/* Top Bar: Logo & Status HUD */}
+            <div className="flex h-12 border-b border-zinc-800 bg-zinc-950/50">
+                <div className="flex items-center gap-3 px-4 border-r border-zinc-800 min-w-fit">
+                    <div className="w-6 h-6 bg-gradient-to-br from-primary to-orange-600 rounded-sm flex items-center justify-center font-bold text-black text-xs font-mono shadow-[0_0_15px_rgba(249,115,22,0.5)] border border-white/20">LS</div>
+                    <h1 className="text-sm font-bold tracking-tighter hidden md:block text-white font-mono uppercase">LOCALSPOT_OS</h1>
                 </div>
+                
+                {/* Context HUD occupies the middle/right of top bar */}
+                <div className="flex-1 overflow-hidden">
+                    <ContextHud 
+                        weather={weather} 
+                        onWeatherToggle={handlers.handleWeatherToggle} 
+                        locationName={locationLabel} 
+                    />
+                </div>
+            </div>
 
+            {/* Main Control Bar */}
+            <div className="px-4 py-3 flex items-center justify-between gap-4">
                 <div className="flex-1 max-w-3xl flex items-stretch h-10 gap-2">
                     <div className="flex-1">
                         <SearchBar
@@ -74,6 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                 <div className="flex items-center gap-2 shrink-0">
                     <AudioVisualizer isPlaying={isAudioPlaying} />
+                    
                     <button
                         onClick={() => { playClick(); setIsSynthesizerOpen(true); }}
                         onMouseEnter={playHover}
@@ -90,7 +105,9 @@ export const Header: React.FC<HeaderProps> = ({
                         <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
                         CURATE
                     </button>
+                    
                     <div className="h-6 w-[1px] bg-zinc-800 mx-2"></div>
+                    
                     <div className="flex bg-zinc-900 rounded-sm p-0.5 gap-0.5 border border-zinc-800">
                         <button onClick={() => handleViewModeChange(ViewMode.LIST)} onMouseEnter={playHover} className={`p-1.5 rounded-sm font-mono text-[10px] tracking-wider transition-all ${viewMode === ViewMode.LIST ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`} title="List View">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -107,11 +124,13 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                 </div>
             </div>
+            
             <CategorySelector
                 onSelect={(q) => { playScan(); handlers.handleSearch(q); }}
                 disabled={state.isSearching}
                 currentQuery={state.query}
             />
+            
             {(state.results.length > 0 || activeTab === Tab.FAVORITES) && <FilterBar filters={filters} onChange={setFilters} />}
 
             {aiAnalysisResult && (
