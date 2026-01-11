@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Business, Itinerary } from '../../types';
-import { generateItinerary } from './itineraryService';
+import { generateItinerary } from '../../services/itineraryService';
+import { speakDescription } from '../../services/audioGenService';
 
 interface CuratorPanelProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export const CuratorPanel: React.FC<CuratorPanelProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
+  const [isPlayingNarrative, setIsPlayingNarrative] = useState(false);
 
   // Simulated loading steps for effect
   useEffect(() => {
@@ -48,6 +50,7 @@ export const CuratorPanel: React.FC<CuratorPanelProps> = ({
   // Reset saved state when new itinerary generated
   useEffect(() => {
       setIsSaved(false);
+      setIsPlayingNarrative(false);
   }, [itinerary]);
 
   const handleGenerate = async (e?: React.FormEvent) => {
@@ -70,6 +73,12 @@ export const CuratorPanel: React.FC<CuratorPanelProps> = ({
 
   const handleQuickSelect = (vibe: string) => {
       setPrompt(vibe);
+  };
+
+  const handlePlayNarrative = () => {
+      if (!itinerary?.narrative) return;
+      setIsPlayingNarrative(true);
+      speakDescription(itinerary.narrative, undefined, () => setIsPlayingNarrative(false));
   };
 
   if (!isOpen) return null;
@@ -218,6 +227,53 @@ export const CuratorPanel: React.FC<CuratorPanelProps> = ({
                                 </div>
                             </div>
                         </div>
+
+                        {/* Briefing & Soundtrack */}
+                        {(itinerary.narrative || itinerary.soundtrack) && (
+                            <div className="bg-zinc-900/30 border border-zinc-800 p-4 space-y-4">
+                                {itinerary.narrative && (
+                                    <div className="relative">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">MISSION BRIEFING</span>
+                                            <button 
+                                                onClick={handlePlayNarrative} 
+                                                disabled={isPlayingNarrative}
+                                                className={`flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider ${isPlayingNarrative ? 'text-purple-400 animate-pulse' : 'text-zinc-400 hover:text-white'}`}
+                                            >
+                                                {isPlayingNarrative ? (
+                                                    <>
+                                                        <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                                        TRANSMITTING...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                                        PLAY_AUDIO
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                        <p className="text-xs font-serif italic text-zinc-300 leading-relaxed border-l-2 border-purple-900/50 pl-3">
+                                            "{itinerary.narrative}"
+                                        </p>
+                                    </div>
+                                )}
+                                
+                                {itinerary.soundtrack && itinerary.soundtrack.length > 0 && (
+                                    <div className="pt-3 border-t border-zinc-800/50">
+                                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block mb-2">SOUNDTRACK</span>
+                                        <div className="space-y-1">
+                                            {itinerary.soundtrack.map((track, i) => (
+                                                <div key={i} className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+                                                    <span className="text-[9px] text-zinc-600">{i+1.toString().padStart(2, '0')}</span>
+                                                    <span className="truncate">{track}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Route Timeline */}
                         <div className="relative pl-4 space-y-0">

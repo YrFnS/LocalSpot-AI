@@ -132,6 +132,8 @@ export interface Itinerary {
   items: ItineraryItem[];
   totalCostEstimate: string;
   createdAt?: number;
+  narrative?: string; // The Curator's Voice briefing
+  soundtrack?: string[]; // Suggested songs for the vibe
 }
 
 export type WeatherCondition = 'Sunny' | 'Rainy' | 'Cloudy' | 'Foggy' | 'Night';

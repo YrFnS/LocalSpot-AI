@@ -20,7 +20,9 @@ export const generateItinerary = async (
       2. If no context fits, suggest a generic activity (e.g. "Walk in the park").
       3. The flow must be logical (e.g. Activity -> Dinner -> Drinks).
       4. Consider travel time and crowd levels when sequencing.
-      5. Return pure JSON.
+      5. Generate a cinematic narrative briefing.
+      6. Curate a 3-song soundtrack that fits the vibe.
+      7. Return pure JSON.
     `;
 
     // Use Gemini 3 Pro with Thinking Config for complex reasoning
@@ -35,6 +37,8 @@ export const generateItinerary = async (
         {
             "title": "Creative Title for the Night",
             "totalCostEstimate": "$$$",
+            "narrative": "A short, evocative, cinematic briefing describing the vibe of this specific night out.",
+            "soundtrack": ["Song Title - Artist", "Song Title - Artist", "Song Title - Artist"],
             "items": [
                 {
                     "timeOffset": "6:00 PM",
@@ -65,6 +69,8 @@ export const generateItinerary = async (
     return {
         title: data.title || "Custom Plan",
         totalCostEstimate: data.totalCostEstimate || "$$",
+        narrative: data.narrative,
+        soundtrack: data.soundtrack,
         items: hydratedItems
     };
 

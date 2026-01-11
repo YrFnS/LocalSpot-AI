@@ -15,7 +15,7 @@ export const MissionCard: React.FC<MissionCardProps> = ({ mission, onDelete, onL
             <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
             
             <div className="p-5 relative z-10">
-                <div className="flex justify-between items-start mb-3">
+                <div className="flex justify-between items-start mb-2">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2 mb-1">
                              <div className="w-1.5 h-1.5 rounded-full bg-purple-500/50 group-hover:bg-purple-400 group-hover:shadow-[0_0_8px_#a855f7] transition-all"></div>
@@ -32,6 +32,12 @@ export const MissionCard: React.FC<MissionCardProps> = ({ mission, onDelete, onL
                         <span className="text-zinc-400">{mission.totalCostEstimate}</span>
                     </div>
                 </div>
+
+                {mission.narrative && (
+                    <p className="text-[10px] text-zinc-500 italic line-clamp-2 mb-4 border-l-2 border-zinc-800 pl-2 group-hover:text-zinc-400 transition-colors font-serif">
+                        "{mission.narrative}"
+                    </p>
+                )}
 
                 {/* Waypoint Visualization */}
                 <div className="relative py-2 mb-4 space-y-2 bg-zinc-900/30 rounded-sm p-3 border border-zinc-800/50">
