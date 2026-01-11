@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { MenuItem } from '../../types';
-import { generateMenuVisual } from '../../services/imageGenService';
+import { generateMenuVisual } from './visualService';
 
 interface MenuReconProps {
     items: MenuItem[];

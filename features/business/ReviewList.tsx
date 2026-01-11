@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Business } from '../../types';
-import { analyzeSentiment, SentimentAnalysis } from '../../services/insightService';
+import { analyzeSentiment, SentimentAnalysis } from './reviewService';
 
 interface ReviewListProps {
     reviews: Business['reviews'];

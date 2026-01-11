@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, VibeState, Coordinates, Itinerary } from '../types';
 import { searchLocalBusinesses, getFeaturedBusinesses } from '../services/searchService';
-import { getAiSuggestions, analyzeImageAndSearch, generateVibeQuery } from '../services/insightService';
+import { getAiSuggestions, analyzeImageAndSearch, generateVibeQuery } from '../features/search/searchInsights';
 import { speakDescription } from '../services/audioGenService';
 import { getRandomWeather } from '../services/weatherService';
 import { useGeolocation } from './useGeolocation';

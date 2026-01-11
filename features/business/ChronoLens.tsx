@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Business } from '../../types';
-import { getHistoricalContext, HistoricalData } from '../../services/historyService';
-import { generateHistoryVisual } from '../../services/imageGenService';
+import { getHistoricalContext, HistoricalData } from './historyService';
+import { generateHistoryVisual } from './visualService';
 
 interface ChronoLensProps {
     business: Business;

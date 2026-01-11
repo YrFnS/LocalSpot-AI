@@ -36,11 +36,15 @@ export const searchLocalBusinesses = async (
     // STEP 1: Grounded Search
     // We explicitly ask for Lat/Lng in the text output because grounding chunks aren't always available in the response text structure.
     const contextualQuery = `${query} (Context: ${timeContext}, ${weatherContext})`;
+    
+    // Avoid putting coordinates directly in the prompt text as it causes tool errors.
+    // The toolConfig with retrievalConfig handles the location bias.
+    const locationContext = userLocation ? "nearby" : "around here";
 
     const groundResponse = await ai.models.generateContent({
       model: groundModel,
       contents: `
-      Find at least 15 distinct businesses for "${contextualQuery}" near ${userLocation ? `${userLocation.latitude},${userLocation.longitude}` : 'me'}. 
+      Find at least 15 distinct businesses for "${contextualQuery}" ${locationContext}. 
       
       CRITICAL OUTPUT RULES:
       1. For EVERY business, you MUST explicitly state its exact "Latitude" and "Longitude" in the text description.

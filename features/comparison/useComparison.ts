@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Business, ComparisonResult } from '../../types';
-import { compareBusinesses } from '../../services/insightService';
+import { compareBusinesses } from './comparisonService';
 
 export const useComparison = () => {
     const [comparisonList, setComparisonList] = useState<Business[]>([]);
