@@ -6,9 +6,9 @@ import { getAiSuggestions, analyzeImageAndSearch, generateVibeQuery } from '../s
 import { speakDescription } from '../services/audioGenService';
 import { getRandomWeather } from '../services/weatherService';
 import { useGeolocation } from './useGeolocation';
-import { useFavorites } from './useFavorites';
-import { useMissions } from './useMissions';
-import { useComparison } from './useComparison';
+import { useFavorites } from '../features/business/useFavorites';
+import { useMissions } from '../features/missions/useMissions';
+import { useComparison } from '../features/comparison/useComparison';
 import { getThemeForQuery, THEMES } from '../utils/themeUtils';
 import { filterBusinesses } from '../utils/filterUtils';
 
@@ -131,7 +131,7 @@ export const useAppController = () => {
         }
     }, [state.userLocation, weather]);
 
-    const handleVibeSearch = async (vibes: VibeState) => {
+    const handleVibeSearch = useCallback(async (vibes: VibeState) => {
         setIsSynthesizing(true);
         try {
             const query = await generateVibeQuery(vibes);
@@ -142,7 +142,7 @@ export const useAppController = () => {
         } finally {
             setIsSynthesizing(false);
         }
-    };
+    }, [handleSearch]);
 
     const handleSpeak = (text: string) => {
         speakDescription(text, () => setIsAudioPlaying(true), () => setIsAudioPlaying(false));

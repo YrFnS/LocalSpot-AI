@@ -35,6 +35,7 @@ export const Viewport: React.FC<ViewportProps> = ({
             onSelect={(id) => { playClick(); handlers.handleSelectBusiness(id); }}
             selectedId={state.selectedBusinessId} 
             onHover={(id) => { if (id && id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
+            isLoading={state.isSearching}
             />
         );
     }
