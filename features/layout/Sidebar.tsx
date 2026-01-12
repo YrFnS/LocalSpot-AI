@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Tab, ViewMode, Business, Itinerary } from '../../types';
 import { BusinessCard } from '../business/BusinessCard';
 import { MissionLog } from '../missions/MissionLog';
@@ -41,6 +41,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     playFunctions
 }) => {
     const { playClick, playHover, playScan } = playFunctions;
+    const containerRef = useRef<HTMLDivElement>(null);
+    const selectedRef = useRef<HTMLDivElement>(null);
 
     const handleTabChange = (tab: Tab) => {
         if (tab !== activeTab) {
@@ -48,6 +50,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setActiveTab(tab);
         }
     };
+
+    // Auto-scroll to selected item
+    useEffect(() => {
+        if (state.selectedBusinessId && selectedRef.current && containerRef.current) {
+            // Check if element is already visible
+            const container = containerRef.current;
+            const element = selectedRef.current;
+            
+            const containerRect = container.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+
+            if (elementRect.top < containerRect.top || elementRect.bottom > containerRect.bottom) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }, [state.selectedBusinessId]);
 
     return (
         <div
@@ -90,7 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Tab Content Area */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar pb-20">
+            <div className="flex-1 overflow-y-auto custom-scrollbar pb-20" ref={containerRef}>
 
                 {/* --- SEARCH TAB CONTENT --- */}
                 {activeTab === Tab.SEARCH && (
@@ -126,18 +144,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         )}
 
                         {!state.isSearching && displayedList.map(biz => (
-                            <BusinessCard
-                                key={biz.id}
-                                business={biz}
-                                isSelected={state.selectedBusinessId === biz.id}
-                                isFavorite={handlers.isFavorite(biz.id)}
-                                onToggleFavorite={(b) => { playClick(); handlers.toggleFavorite(b); }}
-                                onClick={() => { playClick(); handlers.handleSelectBusiness(biz.id); }}
-                                onSpeak={(t) => { playClick(); handlers.handleSpeak(t); }}
-                                onHover={(id) => { if (id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
-                                isInComparison={comparisonList.some(b => b.id === biz.id)}
-                                onToggleComparison={(b) => { playClick(); handlers.toggleComparison(b); }}
-                            />
+                            <div key={biz.id} ref={state.selectedBusinessId === biz.id ? selectedRef : null}>
+                                <BusinessCard
+                                    business={biz}
+                                    isSelected={state.selectedBusinessId === biz.id}
+                                    isFavorite={handlers.isFavorite(biz.id)}
+                                    onToggleFavorite={(b) => { playClick(); handlers.toggleFavorite(b); }}
+                                    onClick={() => { playClick(); handlers.handleSelectBusiness(biz.id); }}
+                                    onSpeak={(t) => { playClick(); handlers.handleSpeak(t); }}
+                                    onHover={(id) => { if (id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
+                                    isInComparison={comparisonList.some(b => b.id === biz.id)}
+                                    onToggleComparison={(b) => { playClick(); handlers.toggleComparison(b); }}
+                                />
+                            </div>
                         ))}
 
                         {!state.isSearching && displayedList.length === 0 && !state.error && (
@@ -163,18 +182,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             </div>
                         )}
                         {displayedList.map(biz => (
-                            <BusinessCard
-                                key={biz.id}
-                                business={biz}
-                                isSelected={state.selectedBusinessId === biz.id}
-                                isFavorite={handlers.isFavorite(biz.id)}
-                                onToggleFavorite={(b) => { playClick(); handlers.toggleFavorite(b); }}
-                                onClick={() => { playClick(); handlers.handleSelectBusiness(biz.id); }}
-                                onSpeak={(t) => { playClick(); handlers.handleSpeak(t); }}
-                                onHover={(id) => { if (id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
-                                isInComparison={comparisonList.some(b => b.id === biz.id)}
-                                onToggleComparison={(b) => { playClick(); handlers.toggleComparison(b); }}
-                            />
+                            <div key={biz.id} ref={state.selectedBusinessId === biz.id ? selectedRef : null}>
+                                <BusinessCard
+                                    business={biz}
+                                    isSelected={state.selectedBusinessId === biz.id}
+                                    isFavorite={handlers.isFavorite(biz.id)}
+                                    onToggleFavorite={(b) => { playClick(); handlers.toggleFavorite(b); }}
+                                    onClick={() => { playClick(); handlers.handleSelectBusiness(biz.id); }}
+                                    onSpeak={(t) => { playClick(); handlers.handleSpeak(t); }}
+                                    onHover={(id) => { if (id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
+                                    isInComparison={comparisonList.some(b => b.id === biz.id)}
+                                    onToggleComparison={(b) => { playClick(); handlers.toggleComparison(b); }}
+                                />
+                            </div>
                         ))}
                         {displayedList.length === 0 && (
                             <div className="p-8 text-center text-zinc-600 text-xs font-mono flex flex-col items-center gap-2 mt-10">

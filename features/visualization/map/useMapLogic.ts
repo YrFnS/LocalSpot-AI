@@ -13,8 +13,25 @@ export const useUserMarker = (
     const userMarkerRef = useRef<maplibregl.Marker | null>(null);
 
     useEffect(() => {
-        if (!mapInstance || !userLocation || !maplibregl.Marker) return;
+        if (!mapInstance || !maplibregl.Marker) return;
         
+        // If userLocation is null, we can't place the marker yet.
+        // But if we had one and lost it (rare), we should remove it.
+        if (!userLocation) {
+            if (userMarkerRef.current) {
+                userMarkerRef.current.remove();
+                userMarkerRef.current = null;
+            }
+            return;
+        }
+        
+        // If marker exists, just update position
+        if (userMarkerRef.current) {
+            userMarkerRef.current.setLngLat([userLocation.longitude, userLocation.latitude]);
+            return;
+        }
+
+        // Create new marker
         const el = document.createElement('div');
         el.className = 'user-marker';
         el.innerHTML = `
@@ -24,13 +41,10 @@ export const useUserMarker = (
           </div>
         `;
 
-        if (userMarkerRef.current) {
-            userMarkerRef.current.setLngLat([userLocation.longitude, userLocation.latitude]);
-        } else {
-            userMarkerRef.current = new maplibregl.Marker({ element: el })
-                .setLngLat([userLocation.longitude, userLocation.latitude])
-                .addTo(mapInstance);
-        }
+        userMarkerRef.current = new maplibregl.Marker({ element: el })
+            .setLngLat([userLocation.longitude, userLocation.latitude])
+            .addTo(mapInstance);
+
     }, [mapInstance, userLocation]);
 };
 

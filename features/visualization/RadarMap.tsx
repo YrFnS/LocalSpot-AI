@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Business, Coordinates, WeatherState } from '../../types';
-import { getIconForCondition } from '../context/weatherService';
 
 interface RadarMapProps {
   userLocation: Coordinates | null;
@@ -24,48 +24,87 @@ export const RadarMap: React.FC<RadarMapProps> = ({
     weather
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [tilt, setTilt] = useState({ x: 60, y: 0 }); 
-  const [rotation, setRotation] = useState(0); 
+  
+  // View State
+  const [pitch, setPitch] = useState(60); // Degrees (X-axis)
+  const [bearing, setBearing] = useState(0); // Degrees (Z-axis rotation)
   const [zoom, setZoom] = useState(0.8);
+  
+  // Interaction State
+  const [isDragging, setIsDragging] = useState(false);
+  const lastMouse = useRef({ x: 0, y: 0 });
+  const lastInteraction = useRef(Date.now());
 
   const ASSETS = {
       GRID_FLOOR: "https://images.unsplash.com/photo-1614728853913-1e32005e319a?q=80&w=2000&auto=format&fit=crop", 
       SKYBOX: "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2000&auto=format&fit=crop", 
-      RAIN_OVERLAY: "https://grainy-gradients.vercel.app/noise.svg"
   };
 
   const size = 1200; 
   const center = size / 2;
 
-  // Cinematic Auto-Rotation
+  // Cinematic Auto-Rotation (Idle Animation)
   useEffect(() => {
       let frame = 0;
       const animate = () => {
-          if (!hoveredId && !selectedId) {
-            setRotation(r => (r + 0.05) % 360);
+          const now = Date.now();
+          const timeSinceInteraction = now - lastInteraction.current;
+          
+          // Only auto-rotate if idle for 2 seconds and not hovering a business
+          if (!isDragging && !hoveredId && !selectedId && timeSinceInteraction > 2000) {
+            setBearing(b => (b + 0.05) % 360);
           }
           frame = requestAnimationFrame(animate);
       };
       animate();
       return () => cancelAnimationFrame(frame);
-  }, [hoveredId, selectedId]);
+  }, [isDragging, hoveredId, selectedId]);
 
-  // Interactive Parallax
-  const handleMouseMove = (e: React.MouseEvent) => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1; 
-      const y = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+  // --- Interaction Handlers ---
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+      setIsDragging(true);
+      lastMouse.current = { x: e.clientX, y: e.clientY };
+      lastInteraction.current = Date.now();
+  };
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+      if (!isDragging) return;
       
-      setTilt({ 
-          x: 55 + (y * 20), 
-          y: x * -15        
-      });
+      const deltaX = e.clientX - lastMouse.current.x;
+      const deltaY = e.clientY - lastMouse.current.y;
+      
+      lastMouse.current = { x: e.clientX, y: e.clientY };
+      lastInteraction.current = Date.now();
+
+      setBearing(b => b + deltaX * 0.5); // Drag left/right to rotate
+      setPitch(p => Math.max(10, Math.min(85, p - deltaY * 0.5))); // Drag up/down to tilt
+  }, [isDragging]);
+
+  const handleMouseUp = () => {
+      setIsDragging(false);
+      lastInteraction.current = Date.now();
   };
 
   const handleWheel = (e: React.WheelEvent) => {
-      setZoom(z => Math.max(0.4, Math.min(1.5, z - e.deltaY * 0.001)));
+      e.stopPropagation();
+      setZoom(z => Math.max(0.4, Math.min(2.0, z - e.deltaY * 0.001)));
+      lastInteraction.current = Date.now();
   };
+
+  const handleZoom = (delta: number) => {
+      setZoom(z => Math.max(0.4, Math.min(2.0, z + delta)));
+      lastInteraction.current = Date.now();
+  };
+
+  const resetView = () => {
+      setPitch(60);
+      setBearing(0);
+      setZoom(0.8);
+      lastInteraction.current = Date.now();
+  };
+
+  // --- Data Logic ---
 
   const dynamicRange = useMemo(() => {
     if (!userLocation || businesses.length === 0) return 0.03;
@@ -91,6 +130,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       const x = center + dx * (size / 2);
       const y = center + dy * (size / 2); 
       
+      // Calculate height based on rating (visual flair)
       const zHeight = b.rating ? (b.rating / 5) * 150 : 50; 
 
       return { ...b, cx: x, cy: y, z: zHeight };
@@ -112,7 +152,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
                   </div>
               );
           case 'Foggy':
-              return <div className="absolute inset-0 pointer-events-none z-40 bg-zinc-900/50 backdrop-blur-[2px]"></div>;
+              return <div className="absolute inset-0 pointer-events-none z-40 bg-zinc-900/30 backdrop-blur-[1px]"></div>;
           case 'Sunny':
               return (
                 <div className="absolute inset-0 pointer-events-none z-40 bg-gradient-to-tr from-orange-500/10 via-transparent to-blue-500/5 mix-blend-screen"></div>
@@ -126,9 +166,12 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   return (
     <div 
         ref={containerRef}
+        onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
-        className="relative h-full w-full overflow-hidden bg-black select-none perspective-container cursor-move group/radar"
+        className={`relative h-full w-full overflow-hidden bg-black select-none perspective-container group/radar ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         style={{ perspective: '1200px' }}
     >
        {/* 1. Skybox & Weather Atmosphere */}
@@ -136,7 +179,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
          className="absolute inset-0 bg-cover bg-center opacity-60 pointer-events-none transition-transform duration-100 ease-linear"
          style={{ 
              backgroundImage: `url(${ASSETS.SKYBOX})`,
-             transform: `scale(1.2) translate(${tilt.y}px, ${tilt.x * 0.5}px)` 
+             transform: `scale(1.4) rotateZ(${bearing * 0.1}deg)` 
          }}
        ></div>
        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black pointer-events-none"></div>
@@ -153,13 +196,16 @@ export const RadarMap: React.FC<RadarMapProps> = ({
                     ENV: {weather.condition} // {weather.temperature}°C // {points.length} SIGNALS
                 </span>
             </div>
+            <div className="mt-1 font-mono text-[9px] text-zinc-600">
+                DRAG TO ORBIT // SCROLL TO ZOOM
+            </div>
        </div>
 
        {/* 3. The 3D Scene */}
        <div 
-         className="absolute inset-0 flex items-center justify-center preserve-3d transition-transform duration-100 ease-linear"
+         className="absolute inset-0 flex items-center justify-center preserve-3d transition-transform duration-75 ease-linear"
          style={{ 
-             transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(${zoom})`,
+             transform: `rotateX(${pitch}deg) rotateZ(${bearing}deg) scale(${zoom})`,
              transformStyle: 'preserve-3d' 
          }}
        >
@@ -169,7 +215,6 @@ export const RadarMap: React.FC<RadarMapProps> = ({
             style={{ 
                 width: `${size}px`, 
                 height: `${size}px`,
-                transform: `rotateZ(${rotation}deg)`,
                 boxShadow: `0 0 100px ${weather.condition === 'Rainy' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(249, 115, 22, 0.1)'}, inset 0 0 100px rgba(0,0,0,0.8)`
             }}
           >
@@ -194,7 +239,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
               {[0.25, 0.5, 0.75, 1].map((scale, i) => (
                   <div key={i} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)]"
                        style={{ width: `${scale * 100}%`, height: `${scale * 100}%` }}>
-                       <span className="absolute top-2 left-1/2 -translate-x-1/2 text-[8px] font-mono text-white/30 bg-black px-1">
+                       <span className="absolute top-2 left-1/2 -translate-x-1/2 text-[8px] font-mono text-white/30 bg-black px-1" style={{ transform: `rotateZ(${-bearing}deg)` }}>
                            {(scale * 5).toFixed(1)}KM
                        </span>
                   </div>
@@ -215,8 +260,8 @@ export const RadarMap: React.FC<RadarMapProps> = ({
                   const isSelected = selectedId === p.id;
                   const isHovered = hoveredId === p.id;
                   
-                  // Billboarding to face camera
-                  const billboard = `rotateZ(${-rotation}deg) rotateX(${-tilt.x}deg) rotateY(${-tilt.y}deg)`;
+                  // Billboarding: Counter-rotate to face camera
+                  const billboard = `rotateZ(${-bearing}deg) rotateX(${-pitch}deg)`;
                   
                   return (
                       <div 
@@ -227,6 +272,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
                             top: `${p.cy}px`,
                             zIndex: isSelected ? 1000 : 10
                         }}
+                        onMouseDown={(e) => e.stopPropagation()} // Prevent drag starting on a marker
                         onClick={(e) => { e.stopPropagation(); onSelect(p.id); }}
                         onMouseEnter={() => setHoveredId(p.id)}
                         onMouseLeave={() => setHoveredId(null)}
@@ -248,7 +294,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
                           {/* The Card */}
                           <div 
-                             className="absolute top-0 left-0 transition-transform duration-500 ease-out"
+                             className="absolute top-0 left-0 transition-transform duration-300 ease-out"
                              style={{ 
                                  transform: `rotateX(-90deg) translateZ(${p.z}px) ${billboard} scale(${isSelected ? 1.5 : 1})` 
                              }}
@@ -301,11 +347,34 @@ export const RadarMap: React.FC<RadarMapProps> = ({
           </div>
        </div>
 
-       {/* Control Deck */}
+       {/* Control Controls */}
+       <div className="absolute bottom-8 right-8 z-50 flex flex-col gap-2">
+            <button 
+                onClick={resetView}
+                className="w-10 h-10 bg-black/80 backdrop-blur border border-zinc-700 hover:border-primary text-zinc-400 hover:text-primary transition-all flex items-center justify-center rounded-sm"
+                title="Reset View"
+            >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+            </button>
+            <button 
+                onClick={() => handleZoom(0.2)}
+                className="w-10 h-10 bg-black/80 backdrop-blur border border-zinc-700 hover:border-primary text-zinc-400 hover:text-primary transition-all flex items-center justify-center rounded-sm"
+            >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+            <button 
+                onClick={() => handleZoom(-0.2)}
+                className="w-10 h-10 bg-black/80 backdrop-blur border border-zinc-700 hover:border-primary text-zinc-400 hover:text-primary transition-all flex items-center justify-center rounded-sm"
+            >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+       </div>
+
+       {/* Deep Scan Button */}
        {onRescan && (
            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50">
                <button 
-                  onClick={onRescan}
+                  onClick={(e) => { e.stopPropagation(); onRescan(); }}
                   className="group relative px-8 py-3 bg-black/80 backdrop-blur-xl border border-primary/30 text-primary font-mono text-xs font-bold tracking-[0.2em] uppercase hover:bg-primary/10 transition-all overflow-hidden clip-path-polygon"
                >
                    <span className="relative z-10 flex items-center gap-3">
