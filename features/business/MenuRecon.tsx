@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MenuItem } from '../../types';
 import { generateMenuVisual } from './visualService';
 
@@ -11,6 +11,21 @@ interface MenuReconProps {
 export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
     const [visuals, setVisuals] = useState<Record<number, string>>({});
     const [loadingIds, setLoadingIds] = useState<Set<number>>(new Set());
+    const [progress, setProgress] = useState<Record<number, number>>({});
+
+    // Simulate reconstruction progress
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setProgress(prev => {
+                const next = { ...prev };
+                loadingIds.forEach(id => {
+                    next[id] = Math.min((next[id] || 0) + Math.random() * 5, 99);
+                });
+                return next;
+            });
+        }, 100);
+        return () => clearInterval(interval);
+    }, [loadingIds]);
 
     if (!items || items.length === 0) return null;
 
@@ -18,6 +33,8 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
         if (visuals[index] || loadingIds.has(index)) return;
 
         setLoadingIds(prev => new Set(prev).add(index));
+        setProgress(prev => ({ ...prev, [index]: 0 }));
+        
         const base64 = await generateMenuVisual(item.name, item.description, vibe);
         
         setLoadingIds(prev => {
@@ -32,14 +49,14 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
     };
 
     return (
-        <div className="border border-zinc-800 bg-[#09090b] relative overflow-hidden group">
+        <div className="border border-zinc-800 bg-[#09090b] relative overflow-hidden group rounded-sm">
             <div className="bg-zinc-900/50 p-3 border-b border-zinc-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-sm shadow-[0_0_5px_#3b82f6]"></div>
-                    <h3 className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">INVENTORY_RECON</h3>
+                    <h3 className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">MENU_RECONSTRUCTION</h3>
                 </div>
                 <span className="text-[9px] font-mono text-zinc-600 uppercase">
-                    {items.length} ASSETS IDENTIFIED
+                    {items.length} SIGNATURE_DISHES
                 </span>
             </div>
 
@@ -63,14 +80,12 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
                                             ? 'border-blue-500 text-blue-500 bg-blue-500/10' 
                                             : 'border-zinc-700 text-zinc-500 hover:text-white hover:border-zinc-500 hover:bg-zinc-800'}
                                     `}
-                                    title="Visualize Dish"
+                                    title={visuals[i] ? "Visual Reconstructed" : "Initiate Reconstruction"}
                                 >
-                                    {loadingIds.has(i) ? (
-                                        <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-                                    ) : visuals[i] ? (
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    {visuals[i] ? (
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                     ) : (
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12V7H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path d="M12 4v1M12 19v1M4 12H3M21 12h-1"/></svg>
                                     )}
                                 </button>
                             </div>
@@ -90,18 +105,38 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
                             </div>
                         )}
 
-                        {/* Generated Visual Container */}
-                        {visuals[i] && (
-                            <div className="mt-3 relative w-full aspect-video rounded-sm overflow-hidden border border-zinc-700 animate-in fade-in zoom-in-95 duration-500">
-                                <img src={visuals[i]} alt="AI Generated" className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-                                <div className="absolute bottom-2 left-2 flex flex-col pointer-events-none">
-                                    <span className="text-[8px] font-mono text-blue-400 uppercase tracking-widest bg-blue-900/50 px-1 border border-blue-500/30 backdrop-blur-sm">
-                                        AI_SIMULATION // ESTIMATED_VISUAL
-                                    </span>
-                                </div>
-                                {/* Scanline overlay */}
-                                <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] pointer-events-none"></div>
+                        {/* Reconstruction Chamber */}
+                        {(loadingIds.has(i) || visuals[i]) && (
+                            <div className="mt-3 relative w-full aspect-video rounded-sm overflow-hidden border border-zinc-700 bg-black">
+                                
+                                {loadingIds.has(i) && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20">
+                                        <div className="w-16 h-16 border border-blue-500/30 relative animate-[spin_3s_linear_infinite]">
+                                            <div className="absolute inset-0 border-t-2 border-blue-500"></div>
+                                        </div>
+                                        <div className="absolute font-mono text-[10px] text-blue-400 mt-10 tracking-widest">
+                                            RENDERING... {Math.floor(progress[i] || 0)}%
+                                        </div>
+                                        {/* Wireframe Grid */}
+                                        <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.1)_1px,transparent_1px)] bg-[length:20px_20px] pointer-events-none"></div>
+                                    </div>
+                                )}
+
+                                {visuals[i] && (
+                                    <div className="absolute inset-0 animate-in fade-in duration-700">
+                                        <img src={visuals[i]} alt="AI Generated" className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-blue-900/40 via-transparent to-transparent pointer-events-none mix-blend-overlay"></div>
+                                        
+                                        {/* Holographic overlay */}
+                                        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.2)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,0,255,0.06),rgba(0,0,0,0.06))] bg-[length:100%_2px,6px_100%] pointer-events-none opacity-30"></div>
+                                        
+                                        <div className="absolute bottom-2 right-2 flex flex-col items-end pointer-events-none">
+                                            <span className="text-[8px] font-mono text-blue-300 uppercase tracking-widest bg-black/60 px-1 backdrop-blur-sm border border-blue-500/20">
+                                                AI_SIMULATION v2.5
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -109,12 +144,6 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
                         <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary scale-y-0 group-hover/item:scale-y-100 transition-transform origin-center"></div>
                     </div>
                 ))}
-            </div>
-            
-            <div className="bg-zinc-950 p-2 text-center border-t border-zinc-800">
-                <span className="text-[8px] font-mono text-zinc-700 uppercase tracking-widest">
-                    AI_ESTIMATED_DATA // VERIFY_ON_SITE
-                </span>
             </div>
         </div>
     );
