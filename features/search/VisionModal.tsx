@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { useSoundFX } from '../../hooks/useSoundFX';
+import { useSoundFX } from '../audio/useSoundFX';
 
 interface VisionModalProps {
   isOpen: boolean;

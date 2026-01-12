@@ -1,5 +1,5 @@
 
-import { ai } from "../../services/aiClient";
+import { ai } from "../ai/client";
 
 export const generateMenuVisual = async (
   itemName: string,

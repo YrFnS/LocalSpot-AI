@@ -13,8 +13,8 @@ import { Sidebar } from './features/layout/Sidebar';
 import { Footer } from './features/layout/Footer';
 import { Viewport } from './features/visualization/Viewport';
 import { useLiveSession } from './features/live/useLiveSession';
-import { useAppController } from './hooks/useAppController';
-import { useSoundFX } from './hooks/useSoundFX';
+import { useAppController } from './features/app/useAppController';
+import { useSoundFX } from './features/audio/useSoundFX';
 import { ViewMode } from './types';
 
 const App: React.FC = () => {

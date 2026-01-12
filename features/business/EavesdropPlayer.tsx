@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Business } from '../../types';
 import { generateConversationAudio } from '../audio/audioGenService';
-import { getAudioContext, decodeAudioData } from '../../utils/audioUtils';
+import { getAudioContext, decodeAudioData } from '../audio/audioUtils';
 
 interface EavesdropPlayerProps {
     business: Business;

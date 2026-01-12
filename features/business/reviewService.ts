@@ -1,5 +1,5 @@
 
-import { ai } from "../../services/aiClient";
+import { ai } from "../ai/client";
 import { Business } from "../../types";
 
 export interface SentimentAnalysis {

@@ -2,7 +2,7 @@
 import { Business, Coordinates, WeatherState } from "../../types";
 import { mapAiResponseToBusiness } from "../business/businessMapper";
 import { getWeatherDescription } from "../context/weatherService";
-import { ai } from "../../services/aiClient";
+import { ai } from "../ai/client";
 
 export const getFeaturedBusinesses = async (
     userLocation: Coordinates | null,

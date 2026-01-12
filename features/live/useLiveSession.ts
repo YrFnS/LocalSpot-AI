@@ -1,7 +1,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, FunctionDeclaration, Type } from "@google/genai";
-import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32 } from '../../utils/audioStreamUtils';
+import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32 } from './streamUtils';
 
 interface UseLiveSessionProps {
   onToolCall: (name: string, args: any) => Promise<any>;

@@ -1,5 +1,5 @@
 
-import { ai } from "../../services/aiClient";
+import { ai } from "../ai/client";
 import { Coordinates, WeatherState, VibeState, Business } from "../../types";
 import { getWeatherDescription } from "../context/weatherService";
 import { searchLocalBusinesses } from "./searchService";

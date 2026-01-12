@@ -1,6 +1,6 @@
 
 import { Business, Coordinates } from "../../types";
-import { calculateDistanceMeters } from "../../utils/geoUtils";
+import { calculateDistanceMeters } from "../location/geoUtils";
 
 export const mapAiResponseToBusiness = (
     item: any, 

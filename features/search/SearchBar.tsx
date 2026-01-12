@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useTypewriter } from '../../hooks/useTypewriter';
-import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { useTypewriter } from '../ui/useTypewriter';
+import { useSpeechRecognition } from './useSpeechRecognition';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;

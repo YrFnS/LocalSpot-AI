@@ -1,8 +1,8 @@
 
 import { Modality } from "@google/genai";
 import { Business } from "../../types";
-import { decodeBase64, decodeAudioData, getAudioContext } from "../../utils/audioUtils";
-import { ai } from "../../services/aiClient";
+import { decodeBase64, decodeAudioData, getAudioContext } from "./audioUtils";
+import { ai } from "../ai/client";
 
 export const generateConversationAudio = async (business: Business): Promise<ArrayBuffer | null> => {
     try {

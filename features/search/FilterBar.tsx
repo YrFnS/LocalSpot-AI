@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { FilterState, SortOption } from '../../types';
-import { useSoundFX } from '../../hooks/useSoundFX';
+import { useSoundFX } from '../audio/useSoundFX';
 
 interface FilterBarProps {
   filters: FilterState;
@@ -90,7 +90,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange }) => {
               `}>
                   {filters.onlyOpen && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>}
               </div>
-              <span className={`absolute left-0 right-0 text-center text-[9px] font-mono font-bold transition-colors ${filters.onlyOpen ? 'text-green-400' : 'text-zinc-500'}`}>
+              <span className={`absolute left-0 right-0 text-center text-[9px] font-mono font-bold transition-colors ${filters.onlyOpen ? 'text-green-400' : 'text-zinc-500'} `}>
                   {filters.onlyOpen ? 'OPEN_ONLY' : 'ALL_HOURS'}
               </span>
            </button>

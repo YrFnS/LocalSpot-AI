@@ -1,5 +1,5 @@
 
-import { ai } from "../../services/aiClient";
+import { ai } from "../ai/client";
 import { Business, ComparisonResult } from "../../types";
 
 export const compareBusinesses = async (b1: Business, b2: Business): Promise<ComparisonResult | null> => {

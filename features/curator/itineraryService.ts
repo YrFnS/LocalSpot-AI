@@ -1,6 +1,6 @@
 
 import { Business, Itinerary, ItineraryItem } from "../../types";
-import { ai } from "../../services/aiClient";
+import { ai } from "../ai/client";
 
 export const generateItinerary = async (
   prompt: string,
