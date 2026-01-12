@@ -5,11 +5,13 @@ import { getWeatherDescription } from "./weatherService";
 import { ai } from "./aiClient";
 
 export const getFeaturedBusinesses = async (
-    userLocation: Coordinates | null
+    userLocation: Coordinates | null,
+    weather?: WeatherState
 ): Promise<Business[]> => {
     const { businesses } = await searchLocalBusinesses(
         "trending spots right now", 
-        userLocation
+        userLocation,
+        weather
     );
     return businesses.slice(0, 15); 
 };

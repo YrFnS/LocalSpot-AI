@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ViewMode, Business, Itinerary } from '../../types';
+import { ViewMode, Business, Itinerary, WeatherState } from '../../types';
 import RadarMap from './RadarMap';
 import { RealMap } from './RealMap';
 import { BusinessGrid } from './BusinessGrid';
@@ -14,6 +14,7 @@ interface ViewportProps {
     handlers: any;
     setHoveredBusinessId: (id: string | null) => void;
     playFunctions: any;
+    weather: WeatherState;
 }
 
 export const Viewport: React.FC<ViewportProps> = ({
@@ -24,7 +25,8 @@ export const Viewport: React.FC<ViewportProps> = ({
     activeItinerary,
     handlers,
     setHoveredBusinessId,
-    playFunctions
+    playFunctions,
+    weather
 }) => {
     const { playClick, playHover, playScan } = playFunctions;
 
@@ -62,6 +64,7 @@ export const Viewport: React.FC<ViewportProps> = ({
             onRescan={() => { playScan(); handlers.handleRescan(); }}
             hoveredId={hoveredBusinessId}
             setHoveredId={(id) => { if (id && id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
+            weather={weather}
         />
     );
 };

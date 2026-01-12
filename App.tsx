@@ -214,6 +214,7 @@ const App: React.FC = () => {
                 handlers={handlers}
                 setHoveredBusinessId={setHoveredBusinessId}
                 playFunctions={playFunctions}
+                weather={weather}
             />
             
             {state.isSearching && viewMode !== ViewMode.GRID && (

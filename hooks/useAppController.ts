@@ -82,7 +82,7 @@ export const useAppController = () => {
         if (userLocation) {
             setState(s => ({ ...s, userLocation }));
             if (state.results.length === 0 && !state.isSearching) {
-                getFeaturedBusinesses(userLocation)
+                getFeaturedBusinesses(userLocation, weather)
                     .then(featured => setState(s => ({ ...s, results: featured })))
                     .catch(console.error);
             }
