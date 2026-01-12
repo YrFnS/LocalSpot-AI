@@ -4,6 +4,7 @@ import { Business } from '../../types';
 import { ChronoLens } from './ChronoLens';
 import { BusinessCrowdMeter } from './BusinessCrowdMeter';
 import { BusinessStatsGrid } from './BusinessStatsGrid';
+import { useSoundFX } from '../audio/useSoundFX';
 
 interface BusinessDetailLeftColProps {
   business: Business;
@@ -18,12 +19,21 @@ export const BusinessDetailLeftCol: React.FC<BusinessDetailLeftColProps> = ({
 }) => {
     const [copied, setCopied] = useState(false);
     const [isChronoActive, setIsChronoActive] = useState(false);
+    const { playClick, playScan, playSuccess } = useSoundFX();
 
     const handleShare = () => {
+        playClick();
         const text = `TARGET: ${business.name} // LOC: ${business.address}`;
         navigator.clipboard.writeText(text);
         setCopied(true);
+        playSuccess();
         setTimeout(() => setCopied(false), 2000);
+    };
+
+    const toggleChrono = () => {
+        if (!isChronoActive) playScan();
+        else playClick();
+        setIsChronoActive(!isChronoActive);
     };
 
     return (
@@ -57,7 +67,7 @@ export const BusinessDetailLeftCol: React.FC<BusinessDetailLeftColProps> = ({
                     <ChronoLens 
                         business={business} 
                         isActive={isChronoActive} 
-                        onToggle={() => setIsChronoActive(false)} 
+                        onToggle={toggleChrono} 
                     />
                     
                     {/* Modern UI Overlays (Hide when Chrono Active) */}
@@ -67,7 +77,7 @@ export const BusinessDetailLeftCol: React.FC<BusinessDetailLeftColProps> = ({
                         </div>
                         
                         <button 
-                            onClick={() => setIsChronoActive(true)}
+                            onClick={toggleChrono}
                             className="bg-amber-900/20 hover:bg-amber-900/40 text-amber-500 border border-amber-600/30 px-3 py-1.5 rounded-sm flex items-center gap-2 backdrop-blur-md transition-all group/time"
                         >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover/time:-rotate-180 transition-transform duration-500"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -104,7 +114,7 @@ export const BusinessDetailLeftCol: React.FC<BusinessDetailLeftColProps> = ({
                     </p>
                     <div className="mt-3 flex justify-end">
                         <button 
-                            onClick={() => onSpeak(business.description || '')} 
+                            onClick={() => { playClick(); onSpeak(business.description || ''); }} 
                             className="flex items-center gap-2 text-[9px] font-mono text-primary hover:text-white uppercase tracking-widest transition-colors"
                         >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
@@ -136,6 +146,7 @@ export const BusinessDetailLeftCol: React.FC<BusinessDetailLeftColProps> = ({
                         href={business.googleMapsUri || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.name)}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
+                        onClick={playClick}
                         className="py-3 bg-zinc-800 hover:bg-zinc-700 text-white text-center font-mono text-[10px] font-bold uppercase tracking-widest border border-zinc-700 transition-all hover:border-primary/50"
                     >
                         NAVIGATE

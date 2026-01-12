@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Business } from '../../types';
 import { getHistoricalContext, HistoricalData } from './historyService';
 import { generateHistoryVisual } from './visualService';
+import { useSoundFX } from '../audio/useSoundFX';
 
 interface ChronoLensProps {
     business: Business;
@@ -15,6 +16,7 @@ export const ChronoLens: React.FC<ChronoLensProps> = ({ business, isActive, onTo
     const [image, setImage] = useState<string | null>(null);
     const [loadingState, setLoadingState] = useState<'IDLE' | 'RESEARCHING' | 'SEARCHING_IMG' | 'READY'>('IDLE');
     const [year, setYear] = useState(2024);
+    const { playHover, playSuccess } = useSoundFX();
 
     useEffect(() => {
         if (isActive && !data && loadingState === 'IDLE') {
@@ -22,11 +24,13 @@ export const ChronoLens: React.FC<ChronoLensProps> = ({ business, isActive, onTo
         }
     }, [isActive]);
 
-    // Year Countdown Effect
+    // Year Countdown Effect with Sound
     useEffect(() => {
         if (loadingState === 'RESEARCHING' || loadingState === 'SEARCHING_IMG') {
             const interval = setInterval(() => {
                 setYear(prev => Math.max(1920, prev - Math.floor(Math.random() * 10)));
+                // Trigger a very subtle click for ticking effect (using hover sound for subtlety)
+                if (Math.random() > 0.7) playHover(); 
             }, 50);
             return () => clearInterval(interval);
         }
@@ -44,6 +48,7 @@ export const ChronoLens: React.FC<ChronoLensProps> = ({ business, isActive, onTo
             const realImageUrl = await generateHistoryVisual(historyData.visualPrompt, historyData.era);
             setImage(realImageUrl);
             setLoadingState('READY');
+            playSuccess();
         } else {
             setLoadingState('IDLE'); // Reset on fail
             onToggle(); // Close
