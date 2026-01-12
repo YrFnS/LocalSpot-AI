@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { ViewMode, Business, Itinerary, WeatherState } from '../../types';
-import RadarMap from './RadarMap';
+import { RadarMap } from './RadarMap';
 import { RealMap } from './RealMap';
 import { BusinessGrid } from './BusinessGrid';
 

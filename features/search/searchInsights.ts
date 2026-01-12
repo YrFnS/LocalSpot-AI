@@ -1,8 +1,8 @@
 
 import { ai } from "../../services/aiClient";
 import { Coordinates, WeatherState, VibeState, Business } from "../../types";
-import { getWeatherDescription } from "../../services/weatherService";
-import { searchLocalBusinesses } from "../../services/searchService";
+import { getWeatherDescription } from "../context/weatherService";
+import { searchLocalBusinesses } from "./searchService";
 
 export const getAiSuggestions = async (
     userLocation: Coordinates | null,

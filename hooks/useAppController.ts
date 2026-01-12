@@ -1,10 +1,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { SearchState, ViewMode, FilterState, Tab, SortOption, WeatherState, WeatherCondition, VibeState, Coordinates, Itinerary } from '../types';
-import { searchLocalBusinesses, getFeaturedBusinesses } from '../services/searchService';
+import { searchLocalBusinesses, getFeaturedBusinesses } from '../features/search/searchService';
 import { getAiSuggestions, analyzeImageAndSearch, generateVibeQuery } from '../features/search/searchInsights';
-import { speakDescription } from '../services/audioGenService';
-import { getRandomWeather } from '../services/weatherService';
+import { speakDescription } from '../features/audio/audioGenService';
+import { getRandomWeather } from '../features/context/weatherService';
 import { useGeolocation } from './useGeolocation';
 import { useFavorites } from '../features/business/useFavorites';
 import { useMissions } from '../features/missions/useMissions';

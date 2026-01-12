@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Business, Itinerary } from '../../types';
 import { generateItinerary } from './itineraryService';
-import { speakDescription } from '../../services/audioGenService';
+import { speakDescription } from '../audio/audioGenService';
 
 interface CuratorPanelProps {
   isOpen: boolean;

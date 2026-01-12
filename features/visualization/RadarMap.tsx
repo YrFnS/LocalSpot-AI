@@ -1,7 +1,6 @@
-
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Business, Coordinates, WeatherState } from '../../types';
-import { getIconForCondition } from '../../services/weatherService';
+import { getIconForCondition } from '../context/weatherService';
 
 interface RadarMapProps {
   userLocation: Coordinates | null;
@@ -14,7 +13,7 @@ interface RadarMapProps {
   weather: WeatherState;
 }
 
-const RadarMap: React.FC<RadarMapProps> = ({ 
+export const RadarMap: React.FC<RadarMapProps> = ({ 
     userLocation, 
     businesses, 
     onSelect, 
@@ -320,5 +319,3 @@ const RadarMap: React.FC<RadarMapProps> = ({
     </div>
   );
 };
-
-export default RadarMap;

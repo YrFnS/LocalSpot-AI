@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { WeatherState, WeatherCondition } from '../../types';
-import { getIconForCondition } from '../../services/weatherService';
+import { getIconForCondition } from './weatherService';
 
 interface ContextHudProps {
   weather: WeatherState;
