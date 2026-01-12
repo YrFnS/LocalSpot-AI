@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Business } from '../../types';
 import { analyzeSentiment, SentimentAnalysis } from './reviewService';
+import { SentimentHud } from './SentimentHud';
 
 interface ReviewListProps {
     reviews: Business['reviews'];
@@ -28,69 +29,19 @@ export const ReviewList: React.FC<ReviewListProps> = ({ reviews }) => {
                 {!analysis && !isAnalyzing && reviews && reviews.length > 0 && (
                     <button 
                         onClick={handleDecode}
-                        className="text-[9px] font-mono text-primary border border-primary/30 px-2 py-1 rounded-sm hover:bg-primary/10 uppercase tracking-wider"
+                        className="text-[9px] font-mono text-primary border border-primary/30 px-2 py-1 rounded-sm hover:bg-primary/10 uppercase tracking-wider transition-colors"
                     >
                         DECODE SIGNALS
                     </button>
                 )}
             </div>
             
-            {/* AI Analysis Result */}
-            {(isAnalyzing || analysis) && (
-                <div className="mb-6 bg-zinc-900/40 border border-zinc-800 p-4 relative overflow-hidden">
-                    {/* Scanline */}
-                    <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.2)_50%)] bg-[length:100%_4px] pointer-events-none"></div>
-
-                    {isAnalyzing ? (
-                        <div className="flex flex-col items-center justify-center py-4 gap-2">
-                            <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
-                            <span className="text-[9px] font-mono text-primary animate-pulse">PARSING SOCIAL DATA...</span>
-                        </div>
-                    ) : analysis ? (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                             <div className="flex justify-between items-start">
-                                 <div>
-                                     <h4 className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">TACTICAL SUMMARY</h4>
-                                     <p className="text-xs font-mono text-white leading-relaxed">"{analysis.summary}"</p>
-                                 </div>
-                                 <div className="text-center ml-4">
-                                     <div className={`text-xl font-bold ${analysis.sentimentScore > 75 ? 'text-green-500' : (analysis.sentimentScore < 40 ? 'text-red-500' : 'text-yellow-500')}`}>
-                                         {analysis.sentimentScore}%
-                                     </div>
-                                     <div className="text-[8px] font-mono text-zinc-600 uppercase">POSITIVITY</div>
-                                 </div>
-                             </div>
-
-                             <div className="flex flex-wrap gap-2">
-                                 {analysis.keywords.map((kw, i) => (
-                                     <span key={i} className="px-2 py-0.5 bg-zinc-800 text-[9px] font-mono text-zinc-300 border border-zinc-700 uppercase">
-                                         {kw}
-                                     </span>
-                                 ))}
-                             </div>
-
-                             {analysis.warnings.length > 0 && (
-                                 <div className="pt-2 border-t border-zinc-800/50">
-                                      <h4 className="text-[9px] font-mono text-red-400 uppercase tracking-widest mb-1 flex items-center gap-1">
-                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                                          CAUTIONARY ADVISORIES
-                                      </h4>
-                                      <ul className="list-disc pl-4 space-y-1">
-                                          {analysis.warnings.map((w, i) => (
-                                              <li key={i} className="text-[10px] font-mono text-zinc-400">{w}</li>
-                                          ))}
-                                      </ul>
-                                 </div>
-                             )}
-                        </div>
-                    ) : null}
-                </div>
-            )}
+            <SentimentHud analysis={analysis} isAnalyzing={isAnalyzing} />
 
             {reviews && reviews.length > 0 ? (
                 <div className="space-y-4 pl-3 border-l border-zinc-800/50">
                     {reviews.map((review, idx) => (
-                        <div key={idx} className="relative group">
+                        <div key={idx} className="relative group animate-in fade-in slide-in-from-left-2" style={{ animationDelay: `${idx * 50}ms` }}>
                             {/* Timeline node */}
                             <div className="absolute -left-[17px] top-2 w-2 h-2 rounded-full bg-zinc-800 border border-zinc-600 group-hover:border-primary group-hover:bg-primary transition-colors"></div>
                             
