@@ -7,32 +7,32 @@ export const generateMenuVisual = async (
   vibe: string
 ): Promise<string | null> => {
   try {
+    // MODIFIED: Instead of generating a fake image, we search for a REAL one.
     const prompt = `
-      Professional food photography of ${itemName}.
-      Description: ${itemDesc}.
-      Context: Served in a ${vibe} restaurant setting.
-      Style: High resolution, 4k, delicious, cinematic lighting, shallow depth of field.
-      Do not include text in the image.
+      Find a real, existing image URL for the food item: "${itemName}" (${itemDesc}).
+      
+      Task:
+      1. Use Google Search to find a high-quality photo of this specific dish.
+      2. Return ONLY the direct image URL as a string.
+      3. If you cannot find a specific image for this item, find a generic real photo of this type of food.
+      4. Do NOT generate an image. Only return a URL found on the web.
+      5. Output format: JSON { "imageUrl": "..." }
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: {
-        parts: [{ text: prompt }],
-      },
+      model: 'gemini-2.5-flash', // Using text model with tools, not image generation model
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: 'application/json'
+      }
     });
 
-    const parts = response.candidates?.[0]?.content?.parts;
-    if (parts) {
-      for (const part of parts) {
-        if (part.inlineData && part.inlineData.data) {
-          return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        }
-      }
-    }
-    return null;
+    const json = JSON.parse(response.text || "{}");
+    return json.imageUrl || null;
+
   } catch (error) {
-    console.error("Menu Visual Gen Error:", error);
+    console.error("Menu Visual Search Error:", error);
     return null;
   }
 };
@@ -42,32 +42,31 @@ export const generateHistoryVisual = async (
     era: string
 ): Promise<string | null> => {
     try {
+        // MODIFIED: Search for real historical archives instead of generating fake vintage photos.
         const prompt = `
-            Old vintage photograph from the ${era}. 
-            Subject: ${visualPrompt}. 
-            Style: Sepia tone, film grain, scratches, slightly blurry edges, authentic historical aesthetic, 1900s photography. 
-            Street view, exterior shot.
-            No text, no watermarks.
+            Find a REAL historical photograph from the ${era} related to: ${visualPrompt}.
+            
+            Task:
+            1. Search for actual archival photos of this location or neighborhood from that time period.
+            2. Return ONLY the direct image URL of a real historical photo.
+            3. Do NOT generate a fake vintage image.
+            4. Output format: JSON { "imageUrl": "..." }
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-                parts: [{ text: prompt }]
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+                responseMimeType: 'application/json'
             }
         });
 
-        const parts = response.candidates?.[0]?.content?.parts;
-        if (parts) {
-            for (const part of parts) {
-                if (part.inlineData && part.inlineData.data) {
-                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                }
-            }
-        }
-        return null;
+        const json = JSON.parse(response.text || "{}");
+        return json.imageUrl || null;
+
     } catch (error) {
-        console.error("History Visual Gen Error:", error);
+        console.error("History Visual Search Error:", error);
         return null;
     }
 };

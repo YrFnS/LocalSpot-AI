@@ -13,17 +13,17 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
     const [loadingIds, setLoadingIds] = useState<Set<number>>(new Set());
     const [progress, setProgress] = useState<Record<number, number>>({});
 
-    // Simulate reconstruction progress
+    // Simulate search progress
     useEffect(() => {
         const interval = setInterval(() => {
             setProgress(prev => {
                 const next = { ...prev };
                 loadingIds.forEach(id => {
-                    next[id] = Math.min((next[id] || 0) + Math.random() * 5, 99);
+                    next[id] = Math.min((next[id] || 0) + Math.random() * 15, 99); // Faster search simulation
                 });
                 return next;
             });
-        }, 100);
+        }, 150);
         return () => clearInterval(interval);
     }, [loadingIds]);
 
@@ -35,7 +35,7 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
         setLoadingIds(prev => new Set(prev).add(index));
         setProgress(prev => ({ ...prev, [index]: 0 }));
         
-        const base64 = await generateMenuVisual(item.name, item.description, vibe);
+        const imageUrl = await generateMenuVisual(item.name, item.description, vibe);
         
         setLoadingIds(prev => {
             const next = new Set(prev);
@@ -43,8 +43,8 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
             return next;
         });
 
-        if (base64) {
-            setVisuals(prev => ({ ...prev, [index]: base64 }));
+        if (imageUrl) {
+            setVisuals(prev => ({ ...prev, [index]: imageUrl }));
         }
     };
 
@@ -53,7 +53,7 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
             <div className="bg-zinc-900/50 p-3 border-b border-zinc-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-sm shadow-[0_0_5px_#3b82f6]"></div>
-                    <h3 className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">MENU_RECONSTRUCTION</h3>
+                    <h3 className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">MENU_VISUALS</h3>
                 </div>
                 <span className="text-[9px] font-mono text-zinc-600 uppercase">
                     {items.length} SIGNATURE_DISHES
@@ -80,12 +80,12 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
                                             ? 'border-blue-500 text-blue-500 bg-blue-500/10' 
                                             : 'border-zinc-700 text-zinc-500 hover:text-white hover:border-zinc-500 hover:bg-zinc-800'}
                                     `}
-                                    title={visuals[i] ? "Visual Reconstructed" : "Initiate Reconstruction"}
+                                    title={visuals[i] ? "Image Retrieved" : "Find Real Image"}
                                 >
                                     {visuals[i] ? (
                                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                     ) : (
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path d="M12 4v1M12 19v1M4 12H3M21 12h-1"/></svg>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                                     )}
                                 </button>
                             </div>
@@ -105,17 +105,17 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
                             </div>
                         )}
 
-                        {/* Reconstruction Chamber */}
+                        {/* Search Chamber */}
                         {(loadingIds.has(i) || visuals[i]) && (
                             <div className="mt-3 relative w-full aspect-video rounded-sm overflow-hidden border border-zinc-700 bg-black">
                                 
                                 {loadingIds.has(i) && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20">
-                                        <div className="w-16 h-16 border border-blue-500/30 relative animate-[spin_3s_linear_infinite]">
-                                            <div className="absolute inset-0 border-t-2 border-blue-500"></div>
+                                        <div className="w-16 h-16 border border-blue-500/30 relative animate-pulse">
+                                            <div className="absolute inset-2 border border-blue-500/50 rounded-full animate-ping"></div>
                                         </div>
                                         <div className="absolute font-mono text-[10px] text-blue-400 mt-10 tracking-widest">
-                                            RENDERING... {Math.floor(progress[i] || 0)}%
+                                            SEARCHING_WEB... {Math.floor(progress[i] || 0)}%
                                         </div>
                                         {/* Wireframe Grid */}
                                         <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.1)_1px,transparent_1px)] bg-[length:20px_20px] pointer-events-none"></div>
@@ -123,16 +123,13 @@ export const MenuRecon: React.FC<MenuReconProps> = ({ items, vibe }) => {
                                 )}
 
                                 {visuals[i] && (
-                                    <div className="absolute inset-0 animate-in fade-in duration-700">
-                                        <img src={visuals[i]} alt="AI Generated" className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 animate-in fade-in duration-700 group/img">
+                                        <img src={visuals[i]} alt="Found on web" className="w-full h-full object-cover" />
                                         <div className="absolute inset-0 bg-gradient-to-t from-blue-900/40 via-transparent to-transparent pointer-events-none mix-blend-overlay"></div>
-                                        
-                                        {/* Holographic overlay */}
-                                        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.2)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,0,255,0.06),rgba(0,0,0,0.06))] bg-[length:100%_2px,6px_100%] pointer-events-none opacity-30"></div>
                                         
                                         <div className="absolute bottom-2 right-2 flex flex-col items-end pointer-events-none">
                                             <span className="text-[8px] font-mono text-blue-300 uppercase tracking-widest bg-black/60 px-1 backdrop-blur-sm border border-blue-500/20">
-                                                AI_SIMULATION v2.5
+                                                WEB_SOURCE_FOUND
                                             </span>
                                         </div>
                                     </div>

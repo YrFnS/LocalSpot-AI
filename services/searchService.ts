@@ -34,38 +34,33 @@ export const searchLocalBusinesses = async (
     const weatherContext = weather ? getWeatherDescription(weather) : "Unknown";
 
     // STEP 1: Grounded Search
-    // We explicitly ask for Lat/Lng in the text output because grounding chunks aren't always available in the response text structure.
     const contextualQuery = `${query} (Context: ${timeContext}, ${weatherContext})`;
-    
-    // Avoid putting coordinates directly in the prompt text as it causes tool errors.
-    // The toolConfig with retrievalConfig handles the location bias.
     const locationContext = userLocation ? "nearby" : "around here";
 
     const groundResponse = await ai.models.generateContent({
       model: groundModel,
       contents: `
-      Find at least 15 distinct businesses for "${contextualQuery}" ${locationContext}. 
+      Find at least 15 distinct real businesses for "${contextualQuery}" ${locationContext}.
       
-      CRITICAL OUTPUT RULES:
-      1. For EVERY business, you MUST explicitly state its exact "Latitude" and "Longitude" in the text description.
-      2. You MUST include the full street address.
-      3. Try to find a specific "Image URL" from the web for each place if possible.
-      4. Provide a rating and review count.
+      CRITICAL DATA EXTRACTION RULES:
+      1. EXACT LOCATION: You MUST find the specific numeric "Latitude" and "Longitude" for every result using Google Maps.
+      2. REAL IMAGES: You MUST search for a valid, specific image URL (e.g. from the business website, social media, or review site) for EACH result.
+      3. ADDRESS: Full street address is required.
+      4. If you cannot find a REAL photo for a specific place, explicitly state "NO_PHOTO". Do NOT invent a URL.
       
-      Format each entry clearly so it can be parsed.
+      Format the list clearly.
       `,
       config: {
-        // We use both Google Maps (for location data) and Google Search (for finding image URLs/Websites)
+        // We use both Google Maps (for location/places) and Google Search (to find real image URLs)
         tools: [{ googleMaps: {} }, { googleSearch: {} }],
         toolConfig: retrievalConfig ? { retrievalConfig } : undefined, 
-        systemInstruction: `You are a Local Guide. Your top priority is LOCATION ACCURACY. Always print the numeric Latitude and Longitude for every result found.`,
+        systemInstruction: `You are a Local Guide. Accuracy is paramount. Never invent coordinates or image URLs. Only return data verified by the tools.`,
       },
     });
 
     const rawText = groundResponse.text || "";
 
     // STEP 2: Structure Data & AI Inference
-    // We pass the raw text which now hopefully contains coords, and ask the stronger model to extract them.
     const structuredResponse = await ai.models.generateContent({
         model: structureModel,
         contents: `
@@ -80,8 +75,8 @@ export const searchLocalBusinesses = async (
 
         TASK:
         1. Extract business details into JSON.
-        2. CRITICAL: Extract "latitude" and "longitude" as numbers. If they are in the text, use them. If not, do NOT invent them (leave as null).
-        3. Extract "photoUri" if a valid image URL is found in the text.
+        2. CRITICAL: Extract "latitude" and "longitude".
+        3. CRITICAL: Extract "photoUri" ONLY if a valid real URL is present in the source text. If the text says NO_PHOTO or you are unsure, set it to null.
         4. Infer a short "Vibe" (e.g., "Cozy", "Industrial").
         5. Calculate a "matchScore" (0-100) based on relevance.
         6. ESTIMATE "crowdLevel" (0-100) and "waitEstimate" (minutes).

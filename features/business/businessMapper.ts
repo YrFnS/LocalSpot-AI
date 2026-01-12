@@ -1,6 +1,5 @@
 
 import { Business, Coordinates } from "../../types";
-import { getPhotosForType } from "./imageService";
 import { calculateDistanceMeters } from "../../utils/geoUtils";
 
 export const mapAiResponseToBusiness = (
@@ -9,8 +8,6 @@ export const mapAiResponseToBusiness = (
     userLocation: Coordinates | null
 ): Business => {
     // 1. LOCATION LOGIC
-    // Only use jitter fallback if the AI completely failed to return coordinates.
-    // The prompt is now engineered to return them, so this fallback should rarely trigger.
     let lat = item.latitude;
     let lng = item.longitude;
     let isRealLocation = true;
@@ -23,13 +20,21 @@ export const mapAiResponseToBusiness = (
     }
     const bizLocation = { latitude: lat, longitude: lng };
 
-    // 2. IMAGE LOGIC
-    // Strict validation on photoUri. Google Grounding often returns non-image URLs.
+    // 2. IMAGE LOGIC - STRICT MODE
+    // Only accept valid, absolute URLs found by the search tool.
     let photos: {name: string, widthPx: number, heightPx: number, authorAttributions: any[]}[] = [];
     
     const isValidImage = (url: string) => {
         if (!url || typeof url !== 'string') return false;
-        return url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null || url.includes('images.unsplash.com') || url.includes('googleusercontent.com');
+        // Must be a real web URL
+        if (!url.startsWith('http')) return false;
+        // Basic extension check or domain check
+        return url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null || 
+               url.includes('images.unsplash.com') || 
+               url.includes('googleusercontent.com') ||
+               url.includes('media-cdn') ||
+               url.includes('tripadvisor') ||
+               url.includes('yelpcdn');
     };
 
     if (item.photoUri && isValidImage(item.photoUri)) {
@@ -39,10 +44,8 @@ export const mapAiResponseToBusiness = (
             heightPx: 600,
             authorAttributions: []
         }];
-    } else {
-        // High-quality aesthetic fallback
-        photos = getPhotosForType(item.type || 'default');
-    }
+    } 
+    // ELSE: We leave photos empty. better to show "NO VISUAL" than a fake image.
 
     // Infer trend based on crowd level (fake logic for demo)
     const trend = (item.crowdLevel || 50) > 75 ? 'UP' : ((item.crowdLevel || 50) < 30 ? 'DOWN' : 'STABLE');

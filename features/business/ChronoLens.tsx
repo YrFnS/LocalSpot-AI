@@ -13,7 +13,7 @@ interface ChronoLensProps {
 export const ChronoLens: React.FC<ChronoLensProps> = ({ business, isActive, onToggle }) => {
     const [data, setData] = useState<HistoricalData | null>(null);
     const [image, setImage] = useState<string | null>(null);
-    const [loadingState, setLoadingState] = useState<'IDLE' | 'RESEARCHING' | 'GENERATING' | 'READY'>('IDLE');
+    const [loadingState, setLoadingState] = useState<'IDLE' | 'RESEARCHING' | 'SEARCHING_IMG' | 'READY'>('IDLE');
     const [year, setYear] = useState(2024);
 
     useEffect(() => {
@@ -24,7 +24,7 @@ export const ChronoLens: React.FC<ChronoLensProps> = ({ business, isActive, onTo
 
     // Year Countdown Effect
     useEffect(() => {
-        if (loadingState === 'RESEARCHING' || loadingState === 'GENERATING') {
+        if (loadingState === 'RESEARCHING' || loadingState === 'SEARCHING_IMG') {
             const interval = setInterval(() => {
                 setYear(prev => Math.max(1920, prev - Math.floor(Math.random() * 10)));
             }, 50);
@@ -38,10 +38,11 @@ export const ChronoLens: React.FC<ChronoLensProps> = ({ business, isActive, onTo
         
         if (historyData) {
             setData(historyData);
-            setLoadingState('GENERATING');
+            setLoadingState('SEARCHING_IMG');
             
-            const genImage = await generateHistoryVisual(historyData.visualPrompt, historyData.era);
-            setImage(genImage);
+            // Search for REAL historical photo
+            const realImageUrl = await generateHistoryVisual(historyData.visualPrompt, historyData.era);
+            setImage(realImageUrl);
             setLoadingState('READY');
         } else {
             setLoadingState('IDLE'); // Reset on fail
@@ -59,8 +60,8 @@ export const ChronoLens: React.FC<ChronoLensProps> = ({ business, isActive, onTo
                     <div className="w-full h-full relative animate-in fade-in duration-1000">
                         <img 
                             src={image} 
-                            alt="Historical" 
-                            className="w-full h-full object-cover filter sepia-[0.8] contrast-125 brightness-90 grayscale-[0.2]"
+                            alt="Historical Archive" 
+                            className="w-full h-full object-cover filter sepia-[0.6] contrast-110 brightness-90 grayscale-[0.3]"
                         />
                         {/* Old Film Effects */}
                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-60 mix-blend-overlay"></div>
@@ -77,8 +78,11 @@ export const ChronoLens: React.FC<ChronoLensProps> = ({ business, isActive, onTo
                             <span className="font-mono text-3xl text-amber-600 font-bold">{year}</span>
                         </div>
                         <span className="font-mono text-amber-800 text-xs tracking-[0.3em] uppercase mt-4 animate-pulse">
-                            {loadingState === 'RESEARCHING' ? 'ACCESSING CITY ARCHIVES...' : 'DEVELOPING FILM NEGATIVE...'}
+                            {loadingState === 'RESEARCHING' ? 'ACCESSING CITY ARCHIVES...' : 'SEARCHING HISTORICAL DB...'}
                         </span>
+                        {loadingState === 'READY' && !image && (
+                            <span className="text-amber-700/50 text-[10px] mt-2">NO VISUAL RECORDS FOUND</span>
+                        )}
                     </div>
                 )}
             </div>
@@ -89,7 +93,7 @@ export const ChronoLens: React.FC<ChronoLensProps> = ({ business, isActive, onTo
                     <div className="relative border-l-2 border-amber-700 pl-4 py-1">
                         {/* Decorative Stamp */}
                         <div className="absolute -top-8 right-0 border-2 border-amber-800/50 text-amber-800/50 p-2 rounded-sm rotate-[-12deg] font-bold text-xs uppercase tracking-widest pointer-events-none">
-                            DECLASSIFIED
+                            ARCHIVE_FOUND
                         </div>
 
                         <div className="flex items-baseline gap-3 mb-2">
@@ -105,7 +109,7 @@ export const ChronoLens: React.FC<ChronoLensProps> = ({ business, isActive, onTo
                         
                         <div className="mt-4 flex gap-4 text-[9px] font-mono text-amber-700 uppercase tracking-widest">
                             <span>REF: {business.id.substring(0, 8)}</span>
-                            <span>SOURCE: GEMINI_HISTORICAL_DB</span>
+                            <span>SOURCE: GEMINI_RESEARCH</span>
                         </div>
                     </div>
                 </div>
