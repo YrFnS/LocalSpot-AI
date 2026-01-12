@@ -26,15 +26,30 @@ export const mapAiResponseToBusiness = (
     
     const isValidImage = (url: string) => {
         if (!url || typeof url !== 'string') return false;
+        
+        // BLOCK GENERIC STOCK SITES
+        if (url.includes('unsplash.com') || 
+            url.includes('pexels.com') || 
+            url.includes('pixabay.com') ||
+            url.includes('freepik.com') ||
+            url.includes('stock.adobe.com')) {
+            return false;
+        }
+
         // Must be a real web URL
         if (!url.startsWith('http')) return false;
-        // Basic extension check or domain check
-        return url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null || 
-               url.includes('images.unsplash.com') || 
-               url.includes('googleusercontent.com') ||
-               url.includes('media-cdn') ||
-               url.includes('tripadvisor') ||
-               url.includes('yelpcdn');
+
+        // Allow known real-content CDNs or standard extensions
+        const isContentCDN = url.includes('googleusercontent.com') || 
+                             url.includes('media-cdn') || 
+                             url.includes('tripadvisor') || 
+                             url.includes('yelpcdn') ||
+                             url.includes('fbcdn.net') ||
+                             url.includes('instagram.com');
+                             
+        const hasExtension = url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null;
+        
+        return isContentCDN || hasExtension;
     };
 
     if (item.photoUri && isValidImage(item.photoUri)) {

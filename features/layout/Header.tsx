@@ -60,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex h-12 border-b border-zinc-800 bg-zinc-950/50">
                 <div className="flex items-center gap-3 px-4 border-r border-zinc-800 min-w-fit">
                     <div className="w-6 h-6 bg-gradient-to-br from-primary to-orange-600 rounded-sm flex items-center justify-center font-bold text-black text-xs font-mono shadow-[0_0_15px_rgba(249,115,22,0.5)] border border-white/20">LS</div>
-                    <h1 className="text-sm font-bold tracking-tighter hidden md:block text-white font-mono uppercase">LOCALSPOT_OS</h1>
+                    <h1 className="text-sm font-bold tracking-tighter hidden md:block text-white font-mono uppercase">LOCALSPOT</h1>
                 </div>
                 
                 {/* Context HUD occupies the middle/right of top bar */}

@@ -68,6 +68,18 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
   if (crowd > 80) { crowdColor = 'bg-red-500'; crowdLabel = 'CRIT'; }
   else if (crowd > 50) { crowdColor = 'bg-yellow-500'; crowdLabel = 'MED'; }
 
+  // Extract domain for attribution
+  const getImageSource = (url: string) => {
+      try {
+          const domain = new URL(url).hostname.replace('www.', '');
+          return `VIA ${domain.toUpperCase()}`;
+      } catch (e) {
+          return '';
+      }
+  };
+
+  const imageSource = business.photos?.[0] ? getImageSource(business.photos[0].name) : '';
+
   return (
     <div className="perspective-[1000px] mb-4">
         <div 
@@ -99,9 +111,9 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
               />
 
               {/* Left: Image Data Block */}
-              <div className="w-24 md:w-32 relative shrink-0 border-r border-zinc-800">
+              <div className="w-24 md:w-32 relative shrink-0 border-r border-zinc-800 bg-zinc-950">
                     {business.photos?.[0] ? (
-                        <div className="w-full h-full relative overflow-hidden">
+                        <div className="w-full h-full relative overflow-hidden group/img">
                             <img 
                                 src={business.photos[0].name} 
                                 alt={business.name}
@@ -109,6 +121,13 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({
                             />
                             <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0)_50%,rgba(0,0,0,0.4)_50%)] bg-[length:100%_4px] pointer-events-none opacity-50"></div>
                             
+                            {/* Source Attribution */}
+                            {imageSource && (
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/80 px-1 py-0.5 text-[6px] font-mono text-zinc-500 truncate opacity-0 group-hover/img:opacity-100 transition-opacity">
+                                    {imageSource}
+                                </div>
+                            )}
+
                             <div className="absolute bottom-1 left-1 right-1 h-1 bg-black/50 overflow-hidden rounded-full">
                                 <div className={`h-full ${crowdColor}`} style={{ width: `${crowd}%` }}></div>
                             </div>

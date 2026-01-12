@@ -12,9 +12,9 @@ export const generateMenuVisual = async (
       Find a real, existing image URL for the food item: "${itemName}" (${itemDesc}).
       
       Task:
-      1. Use Google Search to find a high-quality photo of this specific dish.
+      1. Use Google Search to find a high-quality photo of this specific dish or a very similar real dish served at a restaurant.
       2. Return ONLY the direct image URL as a string.
-      3. If you cannot find a specific image for this item, find a generic real photo of this type of food.
+      3. BLOCK STOCK SITES: Do NOT use Unsplash, Pexels, or Pixabay.
       4. Do NOT generate an image. Only return a URL found on the web.
       5. Output format: JSON { "imageUrl": "..." }
     `;
