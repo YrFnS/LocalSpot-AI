@@ -245,14 +245,36 @@ export const RadarMap: React.FC<RadarMapProps> = ({
                   </div>
               ))}
 
-              {/* User Center */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 preserve-3d">
-                   <div className={`absolute inset-0 rounded-full animate-ping ${weather.condition === 'Rainy' ? 'bg-blue-500/20' : 'bg-primary/20'}`}></div>
-                   <div className={`absolute inset-0 border rounded-full shadow-[0_0_30px_currentColor] ${weather.condition === 'Rainy' ? 'border-blue-500/50 text-blue-500' : 'border-primary/50 text-primary'}`}></div>
+              {/* User Center Marker */}
+              <div className="absolute top-1/2 left-1/2 w-0 h-0 preserve-3d z-50">
+                   {/* Pulsing Ground Ring */}
+                   <div className="absolute -translate-x-1/2 -translate-y-1/2 w-16 h-16">
+                        <div className={`absolute inset-0 rounded-full animate-ping opacity-75 ${weather.condition === 'Rainy' ? 'bg-blue-500/30' : 'bg-primary/30'}`}></div>
+                        <div className={`absolute inset-2 rounded-full border-2 animate-[spin_3s_linear_infinite] ${weather.condition === 'Rainy' ? 'border-blue-500/50 border-t-blue-500' : 'border-primary/50 border-t-primary'}`}></div>
+                        <div className={`absolute inset-6 rounded-full ${weather.condition === 'Rainy' ? 'bg-blue-500' : 'bg-primary'} shadow-[0_0_20px_currentColor]`}></div>
+                   </div>
+
+                   {/* Vertical Laser Beam */}
                    <div 
-                        className={`absolute bottom-1/2 left-1/2 w-0.5 h-[1000px] bg-gradient-to-t from-current via-transparent to-transparent origin-bottom ${weather.condition === 'Rainy' ? 'text-blue-500' : 'text-primary'}`}
-                        style={{ transform: 'rotateX(-90deg)' }}
+                        className={`absolute bottom-0 left-0 w-1 h-[200px] bg-gradient-to-t from-current via-current to-transparent origin-bottom opacity-50 ${weather.condition === 'Rainy' ? 'text-blue-500' : 'text-primary'}`}
+                        style={{ transform: 'translate(-50%, 0) rotateX(-90deg)' }}
                    ></div>
+
+                   {/* Floating Label (Billboarding) */}
+                   <div 
+                        className="absolute left-0 top-0 transition-transform duration-75"
+                        style={{ transform: `translate(-50%, -100px) rotateZ(${-bearing}deg) rotateX(${-pitch}deg)` }}
+                   >
+                       <div className={`px-2 py-1 rounded-sm border backdrop-blur-md text-[9px] font-bold font-mono whitespace-nowrap shadow-lg flex items-center gap-2 ${weather.condition === 'Rainy' ? 'bg-blue-900/80 border-blue-500 text-blue-100' : 'bg-zinc-900/80 border-primary text-primary'}`}>
+                           <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-current"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-current"></span>
+                            </span>
+                           YOU_ARE_HERE
+                       </div>
+                       {/* Connector Line */}
+                       <div className={`absolute left-1/2 top-full w-px h-8 -translate-x-1/2 ${weather.condition === 'Rainy' ? 'bg-blue-500' : 'bg-primary'}`}></div>
+                   </div>
               </div>
 
               {/* 5. Business Markers */}
