@@ -55,21 +55,36 @@ export const RealMap: React.FC<RealMapProps> = ({
       style.innerHTML = `
         @keyframes rain-fall {
             0% { background-position: 0 0; }
-            100% { background-position: 0 100px; }
+            100% { background-position: 0 100vh; }
         }
-        .rain-overlay {
-            background-image: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.15));
-            background-size: 1px 40px;
-            animation: rain-fall 0.2s linear infinite;
+        .rain-near {
+            background-image: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.25));
+            background-size: 1px 60px;
+            animation: rain-fall 0.3s linear infinite;
         }
+        .rain-far {
+            background-image: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.1));
+            background-size: 1px 30px;
+            animation: rain-fall 0.5s linear infinite;
+        }
+        
         @keyframes fog-drift {
             0% { background-position: 0 0; }
-            100% { background-position: 100px 0; }
+            100% { background-position: 500px 0; }
         }
         .fog-overlay {
             background-image: url('https://grainy-gradients.vercel.app/noise.svg');
-            opacity: 0.1;
-            animation: fog-drift 20s linear infinite;
+            opacity: 0.2;
+            animation: fog-drift 60s linear infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+        .sun-flare {
+            background: radial-gradient(circle at 80% 20%, rgba(255,200,100,0.4) 0%, transparent 60%);
+            animation: pulse-glow 10s ease-in-out infinite;
         }
       `;
       document.head.appendChild(style);
@@ -264,24 +279,41 @@ export const RealMap: React.FC<RealMapProps> = ({
           case 'Rainy':
               return (
                   <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
-                      <div className="absolute inset-0 rain-overlay opacity-40 mix-blend-screen"></div>
-                      <div className="absolute inset-0 bg-blue-900/20 mix-blend-multiply"></div>
+                      <div className="absolute inset-0 bg-slate-900/40 mix-blend-multiply transition-colors duration-1000"></div>
+                      <div className="absolute inset-0 rain-near opacity-60 mix-blend-screen"></div>
+                      <div className="absolute inset-0 rain-far opacity-40 mix-blend-screen" style={{ backgroundPosition: '50% 0' }}></div>
+                      {/* Vignette for gloomy feel */}
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)]"></div>
                   </div>
               );
           case 'Foggy':
               return (
                   <div className="absolute inset-0 z-20 pointer-events-none">
-                      <div className="absolute inset-0 bg-zinc-900/60 backdrop-blur-[2px]"></div>
-                      <div className="absolute inset-0 fog-overlay mix-blend-overlay"></div>
+                      <div className="absolute inset-0 bg-zinc-400/10 backdrop-blur-[3px] transition-all duration-1000"></div>
+                      <div className="absolute inset-0 fog-overlay mix-blend-soft-light"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-transparent to-zinc-900/80"></div>
                   </div>
               );
           case 'Night':
               return (
-                  <div className="absolute inset-0 z-20 pointer-events-none bg-blue-950/40 mix-blend-multiply"></div>
+                  <div className="absolute inset-0 z-20 pointer-events-none">
+                      <div className="absolute inset-0 bg-blue-950/60 mix-blend-multiply transition-colors duration-1000"></div>
+                      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] mix-blend-overlay"></div>
+                  </div>
               );
           case 'Sunny':
               return (
-                  <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-tr from-orange-500/10 via-transparent to-blue-500/10 mix-blend-overlay"></div>
+                  <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+                      <div className="absolute inset-0 bg-orange-500/5 mix-blend-overlay transition-colors duration-1000"></div>
+                      <div className="absolute inset-0 sun-flare mix-blend-screen pointer-events-none"></div>
+                      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.1),transparent)]"></div>
+                  </div>
+              );
+          case 'Cloudy':
+              return (
+                  <div className="absolute inset-0 z-20 pointer-events-none">
+                      <div className="absolute inset-0 bg-zinc-500/20 mix-blend-multiply transition-colors duration-1000"></div>
+                  </div>
               );
           default:
               return null;
