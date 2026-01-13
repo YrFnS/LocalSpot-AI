@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Business, Coordinates, Itinerary } from '../../types';
+import { Business, Coordinates, Itinerary, WeatherState } from '../../types';
 import * as maplibregl from 'maplibre-gl';
 import { MapUI } from './map/MapUI';
 import { 
@@ -19,6 +19,7 @@ interface RealMapProps {
   setHoveredId: (id: string | null) => void;
   onRescan?: (customLocation?: Coordinates) => void;
   activeItinerary?: Itinerary | null;
+  weather: WeatherState;
 }
 
 export const RealMap: React.FC<RealMapProps> = ({
@@ -29,7 +30,8 @@ export const RealMap: React.FC<RealMapProps> = ({
   hoveredId,
   setHoveredId,
   onRescan,
-  activeItinerary
+  activeItinerary,
+  weather
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<maplibregl.Map | null>(null);
@@ -37,16 +39,50 @@ export const RealMap: React.FC<RealMapProps> = ({
   // Local View State for UI
   const [mapCenter, setMapCenter] = useState<Coordinates | null>(null);
   const [pitch, setPitch] = useState(45);
+  const [bearing, setBearing] = useState(-15);
   
   // Flyover State
   const [isFlying, setIsFlying] = useState(false);
   const flyInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Inject Weather Animation Styles
+  useEffect(() => {
+      const styleId = 'map-weather-fx';
+      if (document.getElementById(styleId)) return;
+
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.innerHTML = `
+        @keyframes rain-fall {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100px; }
+        }
+        .rain-overlay {
+            background-image: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.15));
+            background-size: 1px 40px;
+            animation: rain-fall 0.2s linear infinite;
+        }
+        @keyframes fog-drift {
+            0% { background-position: 0 0; }
+            100% { background-position: 100px 0; }
+        }
+        .fog-overlay {
+            background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.1;
+            animation: fog-drift 20s linear infinite;
+        }
+      `;
+      document.head.appendChild(style);
+      return () => {
+          const el = document.getElementById(styleId);
+          if(el) el.remove();
+      };
+  }, []);
+
   // --- Map Initialization ---
   useEffect(() => {
     if (mapInstance.current || !mapContainer.current) return;
     
-    // Safety check for maplibregl availability
     if (!maplibregl.Map) {
         console.error("MapLibre GL not loaded correctly");
         return;
@@ -77,8 +113,10 @@ export const RealMap: React.FC<RealMapProps> = ({
                 minzoom: 0,
                 maxzoom: 22,
                 paint: {
-                   'raster-saturation': -0.8,
-                   'raster-contrast': 0.2
+                   'raster-saturation': -0.9,
+                   'raster-contrast': 0.1,
+                   'raster-brightness-min': 0.05,
+                   'raster-fade-duration': 0
                 }
             }
         ]
@@ -94,20 +132,14 @@ export const RealMap: React.FC<RealMapProps> = ({
       attributionControl: false
     });
 
-    map.addControl(new maplibregl.NavigationControl({
-        visualizePitch: true,
-        showCompass: true,
-        showZoom: false
-    }), 'bottom-right');
-
     map.on('move', () => {
       const center = map.getCenter();
       setMapCenter({ latitude: center.lat, longitude: center.lng });
       setPitch(map.getPitch());
+      setBearing(map.getBearing());
     });
 
     map.on('load', () => {
-        // Source/Layers setup
         map.addSource('route', {
             type: 'geojson',
             data: { type: 'FeatureCollection', features: [] }
@@ -133,9 +165,9 @@ export const RealMap: React.FC<RealMapProps> = ({
             layout: { 'line-join': 'round', 'line-cap': 'round' },
             paint: {
                 'line-color': '#f97316',
-                'line-width': 10,
-                'line-blur': 10,
-                'line-opacity': 0.3
+                'line-width': 12,
+                'line-blur': 12,
+                'line-opacity': 0.4
             }
         });
     });
@@ -146,7 +178,7 @@ export const RealMap: React.FC<RealMapProps> = ({
       map.remove();
       mapInstance.current = null;
     };
-  }, []); // Run once on mount
+  }, []);
 
   // --- Logic Hooks ---
   useUserMarker(mapInstance.current, userLocation);
@@ -181,24 +213,22 @@ export const RealMap: React.FC<RealMapProps> = ({
                   center: [item.business.location.longitude, item.business.location.latitude],
                   zoom: 17,
                   pitch: 65,
-                  bearing: (idx * 45) % 360, // Rotate viewing angle for each stop
+                  bearing: (idx * 45) % 360, 
                   speed: 0.8,
                   curve: 1.2,
                   essential: true
               });
-              onSelect(item.business.id); // Open detail/select
+              onSelect(item.business.id);
           }
       };
 
-      // Initial Fly
       flyToStep(0);
       step++;
 
-      // Schedule next steps (Allow time for flight + viewing)
       flyInterval.current = setInterval(() => {
           flyToStep(step);
           step++;
-      }, 6000); // 6 seconds per stop
+      }, 6000);
   };
 
   // --- Handlers ---
@@ -229,14 +259,54 @@ export const RealMap: React.FC<RealMapProps> = ({
     }
   };
 
+  const renderWeatherEffects = () => {
+      switch(weather.condition) {
+          case 'Rainy':
+              return (
+                  <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+                      <div className="absolute inset-0 rain-overlay opacity-40 mix-blend-screen"></div>
+                      <div className="absolute inset-0 bg-blue-900/20 mix-blend-multiply"></div>
+                  </div>
+              );
+          case 'Foggy':
+              return (
+                  <div className="absolute inset-0 z-20 pointer-events-none">
+                      <div className="absolute inset-0 bg-zinc-900/60 backdrop-blur-[2px]"></div>
+                      <div className="absolute inset-0 fog-overlay mix-blend-overlay"></div>
+                  </div>
+              );
+          case 'Night':
+              return (
+                  <div className="absolute inset-0 z-20 pointer-events-none bg-blue-950/40 mix-blend-multiply"></div>
+              );
+          case 'Sunny':
+              return (
+                  <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-tr from-orange-500/10 via-transparent to-blue-500/10 mix-blend-overlay"></div>
+              );
+          default:
+              return null;
+      }
+  };
+
   return (
-    <div className="relative h-full w-full bg-[#09090b] group/map">
-        <div ref={mapContainer} className="h-full w-full outline-none" />
+    <div className="relative h-full w-full bg-[#09090b] group/map overflow-hidden">
+        {/* Map Canvas */}
+        <div ref={mapContainer} className="h-full w-full outline-none filter contrast-125 saturate-0" />
         
+        {/* Atmospheric Overlays */}
+        {renderWeatherEffects()}
+        <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]"></div>
+        <div className="absolute inset-0 pointer-events-none z-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
+        <div className="absolute inset-0 pointer-events-none z-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,6px_100%] opacity-20"></div>
+        
+        {/* Vignette */}
+        <div className="absolute inset-0 pointer-events-none z-10 shadow-[inset_0_0_100px_rgba(0,0,0,0.7)]"></div>
+
         <MapUI 
             activeItinerary={activeItinerary || null}
             mapCenter={mapCenter}
             pitch={pitch}
+            bearing={bearing}
             userLocation={userLocation}
             onSearchThisArea={handleSearchThisArea}
             onRecenter={handleRecenter}

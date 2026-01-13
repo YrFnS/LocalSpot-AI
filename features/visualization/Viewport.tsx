@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ViewMode, Business, Itinerary, WeatherState } from '../../types';
 import { RadarMap } from './RadarMap';
@@ -51,6 +52,7 @@ export const Viewport: React.FC<ViewportProps> = ({
             setHoveredId={(id) => { if (id && id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
             onRescan={() => { playScan(); handlers.handleRescan(); }}
             activeItinerary={activeItinerary}
+            weather={weather}
             />
         );
     }

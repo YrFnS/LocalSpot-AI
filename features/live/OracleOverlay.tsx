@@ -29,13 +29,16 @@ export const OracleOverlay: React.FC<OracleOverlayProps> = ({
   
   const [visionMode, setVisionMode] = useState(false);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
+  
+  // View State: FULL = Immersive Overlay, MINI = Bottom HUD
+  const [viewState, setViewState] = useState<'FULL' | 'MINI'>('FULL');
 
   // Auto-scroll transcript
   useEffect(() => {
       if (scrollRef.current) {
           scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
       }
-  }, [transcripts, realtimeText]);
+  }, [transcripts, realtimeText, viewState]);
 
   // Video Stream Handling
   useEffect(() => {
@@ -85,10 +88,12 @@ export const OracleOverlay: React.FC<OracleOverlayProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className={`fixed inset-0 z-[100] animate-in fade-in duration-500 flex flex-col items-center justify-center overflow-hidden font-sans ${visionMode ? 'bg-black' : 'bg-black/95 backdrop-blur-xl'}`}>
+  // --- RENDER MODES ---
+
+  const renderFullMode = () => (
+    <div className={`absolute inset-0 pointer-events-auto flex flex-col items-center justify-center font-sans transition-all duration-500 ${visionMode ? 'bg-black' : 'bg-black/95 backdrop-blur-xl'}`}>
         
-        {/* Video Feed Layer */}
+        {/* Full Video Feed */}
         {visionMode && (
             <video 
                 ref={videoRef}
@@ -99,7 +104,7 @@ export const OracleOverlay: React.FC<OracleOverlayProps> = ({
             />
         )}
 
-        {/* HUD Canvas Layer */}
+        {/* HUD Layer */}
         <OracleHUD 
             isConnected={isConnected} 
             isSpeaking={isSpeaking} 
@@ -107,10 +112,10 @@ export const OracleOverlay: React.FC<OracleOverlayProps> = ({
             visionMode={visionMode} 
         />
         
-        {/* AR Overlay UI */}
+        {/* Full UI Overlay */}
         <div className="absolute inset-0 pointer-events-none p-6 md:p-12 flex flex-col justify-between">
             {/* Top Bar */}
-            <div className="flex justify-between items-start">
+            <div className="flex justify-between items-start pointer-events-auto">
                  <div className="flex flex-col gap-1">
                      <div className="flex items-center gap-2">
                          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-yellow-500 animate-pulse'}`}></div>
@@ -118,26 +123,26 @@ export const OracleOverlay: React.FC<OracleOverlayProps> = ({
                              {visionMode ? 'OPTICAL_SENSORS_ACTIVE' : 'NEURAL_UPLINK_ESTABLISHED'}
                          </span>
                      </div>
-                     <span className="font-mono text-[9px] text-zinc-600">LATENCY: 12ms // PACKET_LOSS: 0%</span>
+                     <span className="font-mono text-[9px] text-zinc-600">LATENCY: 12ms // MODE: IMMERSIVE</span>
                  </div>
-                 <div className="text-right flex flex-col items-end">
-                     <span className="font-mono text-xs text-primary tracking-[0.2em] font-bold">GEMINI_LIVE_V2</span>
-                     <div className="flex justify-end mt-1 gap-1">
-                         {[1,2,3,4].map(i => <div key={i} className={`w-1 h-3 bg-primary/50 ${i <= volume * 10 ? 'opacity-100' : 'opacity-20'}`}></div>)}
-                     </div>
-                     
-                     {/* Vision Toggle */}
+                 
+                 <div className="flex gap-2">
+                     <button
+                        onClick={() => setViewState('MINI')}
+                        className="px-3 py-1.5 border border-zinc-800 bg-black/50 hover:bg-zinc-800 text-zinc-400 hover:text-white text-[9px] font-mono uppercase tracking-widest rounded-sm transition-colors"
+                     >
+                        MINIMIZE_HUD
+                     </button>
                      <button 
                         onClick={() => setVisionMode(!visionMode)}
-                        className={`pointer-events-auto mt-4 flex items-center gap-2 px-3 py-1.5 border rounded-sm transition-all uppercase text-[9px] font-mono font-bold tracking-wider ${visionMode ? 'bg-primary text-black border-primary' : 'bg-zinc-900 text-zinc-400 border-zinc-700 hover:text-white'}`}
+                        className={`flex items-center gap-2 px-3 py-1.5 border rounded-sm transition-all uppercase text-[9px] font-mono font-bold tracking-wider ${visionMode ? 'bg-primary text-black border-primary' : 'bg-zinc-900 text-zinc-400 border-zinc-700 hover:text-white'}`}
                      >
-                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                          {visionMode ? 'VISION ON' : 'ENABLE VISION'}
                      </button>
                  </div>
             </div>
 
-            {/* Transcript Log */}
+            {/* Transcript Log (Full History) */}
             <div className="absolute bottom-32 left-0 right-0 max-w-2xl mx-auto px-4 pointer-events-auto">
                 <div 
                     ref={scrollRef}
@@ -176,35 +181,109 @@ export const OracleOverlay: React.FC<OracleOverlayProps> = ({
             </div>
 
             {/* Bottom Controls */}
-            <div className="flex justify-center items-end relative pointer-events-auto">
+            <div className="flex justify-center items-end pointer-events-auto">
                  <button 
                     onClick={onClose}
                     className="group relative px-8 py-3 bg-red-950/20 border border-red-900/50 hover:bg-red-900/40 hover:border-red-500 transition-all rounded-sm overflow-hidden backdrop-blur-md"
                  >
-                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
                      <span className="relative z-10 font-mono text-xs font-bold text-red-500 group-hover:text-red-300 tracking-[0.2em]">TERMINATE UPLINK</span>
-                     
-                     <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-red-500/50"></div>
-                     <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-red-500/50"></div>
                  </button>
             </div>
         </div>
+    </div>
+  );
+
+  const renderMiniMode = () => (
+    <div className="absolute inset-0 pointer-events-none flex flex-col justify-end p-4 md:p-6 z-50">
         
-        {/* Floating Code Snippets (Decor) */}
-        {!visionMode && (
-            <>
-                <div className="absolute left-10 top-1/2 -translate-y-1/2 font-mono text-[9px] text-green-500/20 hidden md:block select-none leading-tight">
-                    {Array.from({length: 10}).map((_, i) => (
-                        <div key={i}>{`0x${Math.floor(Math.random()*16777215).toString(16).toUpperCase()} :: SYNC_OK`}</div>
-                    ))}
-                </div>
-                <div className="absolute right-10 top-1/2 -translate-y-1/2 font-mono text-[9px] text-primary/20 hidden md:block select-none leading-tight text-right">
-                    {Array.from({length: 10}).map((_, i) => (
-                        <div key={i}>{`BUFFER_SIZE :: ${Math.floor(Math.random()*4096)}`}</div>
-                    ))}
-                </div>
-            </>
+        {/* Floating Captions (Just the latest) */}
+        {(realtimeText || transcripts.length > 0) && (
+            <div className="mb-4 self-center w-full max-w-lg pointer-events-none flex flex-col items-center gap-2">
+                {realtimeText && (
+                    <div className="px-4 py-2 bg-black/80 backdrop-blur-md border border-primary/30 text-primary text-sm font-mono shadow-2xl rounded-sm animate-in slide-in-from-bottom-2">
+                        <span className="opacity-50 mr-2 text-[10px] uppercase">{realtimeText.role === 'user' ? 'YOU:' : 'ORACLE:'}</span>
+                        {realtimeText.text}
+                    </div>
+                )}
+                {!realtimeText && transcripts.length > 0 && (
+                    <div className="px-4 py-2 bg-black/60 backdrop-blur-md border border-zinc-800 text-zinc-300 text-xs font-mono shadow-xl rounded-sm opacity-80">
+                         {transcripts[transcripts.length - 1].text}
+                    </div>
+                )}
+            </div>
         )}
+
+        {/* Tactical HUD Bar */}
+        <div className="pointer-events-auto relative w-full max-w-3xl mx-auto h-20 bg-[#09090b]/90 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-[0_10px_50px_rgba(0,0,0,0.5)] flex items-center overflow-hidden animate-in slide-in-from-bottom-10">
+            
+            {/* Left: Status */}
+            <div className="h-full px-6 flex flex-col justify-center border-r border-zinc-800 bg-black/20 shrink-0">
+                 <div className="flex items-center gap-2">
+                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                     <span className="text-[10px] font-mono font-bold text-zinc-400 tracking-widest">LIVE</span>
+                 </div>
+                 <span className="text-[9px] font-mono text-zinc-600 uppercase mt-1">TACTICAL_HUD</span>
+            </div>
+
+            {/* Center: Waveform Visualization */}
+            <div className="flex-1 h-full relative">
+                <OracleHUD 
+                    isConnected={isConnected} 
+                    isSpeaking={isSpeaking} 
+                    volume={volume} 
+                    visionMode={false} // Always render classic wave in HUD
+                />
+            </div>
+
+            {/* Right: Vision Preview (PiP) */}
+            {visionMode && (
+                <div className="absolute bottom-2 right-44 w-24 h-16 bg-black border border-primary/30 rounded overflow-hidden shadow-lg group">
+                    <video 
+                        ref={videoRef}
+                        autoPlay 
+                        playsInline 
+                        muted
+                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                    />
+                    <div className="absolute top-0 right-0 bg-primary px-1 text-[8px] text-black font-bold">CAM</div>
+                </div>
+            )}
+
+            {/* Far Right: Controls */}
+            <div className="h-full px-4 flex items-center gap-2 border-l border-zinc-800 bg-black/20 shrink-0">
+                <button 
+                    onClick={() => setVisionMode(!visionMode)}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${visionMode ? 'bg-primary text-black border-primary' : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white'}`}
+                    title="Toggle Vision"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+
+                <button 
+                    onClick={() => setViewState('FULL')}
+                    className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-700 flex items-center justify-center transition-all"
+                    title="Maximize"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                </button>
+
+                <div className="w-px h-8 bg-zinc-700 mx-1"></div>
+
+                <button 
+                    onClick={onClose}
+                    className="w-10 h-10 rounded-full bg-red-900/20 border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all"
+                    title="Disconnect"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-[100] pointer-events-none">
+        {viewState === 'FULL' ? renderFullMode() : renderMiniMode()}
     </div>
   );
 };
