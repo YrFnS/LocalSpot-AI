@@ -265,7 +265,7 @@ export const CuratorPanel: React.FC<CuratorPanelProps> = ({
                                         <div className="space-y-1">
                                             {itinerary.soundtrack.map((track, i) => (
                                                 <div key={i} className="flex items-center gap-2 text-xs font-mono text-zinc-400">
-                                                    <span className="text-[9px] text-zinc-600">{i+1.toString().padStart(2, '0')}</span>
+                                                    <span className="text-[9px] text-zinc-600">{(i + 1).toString().padStart(2, '0')}</span>
                                                     <span className="truncate">{track}</span>
                                                 </div>
                                             ))}

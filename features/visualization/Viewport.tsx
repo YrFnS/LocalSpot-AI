@@ -14,7 +14,7 @@ interface ViewportProps {
     handlers: any;
     setHoveredBusinessId: (id: string | null) => void;
     playFunctions: any;
-    weather: WeatherState;
+
 }
 
 export const Viewport: React.FC<ViewportProps> = ({
@@ -26,46 +26,44 @@ export const Viewport: React.FC<ViewportProps> = ({
     handlers,
     setHoveredBusinessId,
     playFunctions,
-    weather
+
 }) => {
     const { playClick, playHover, playScan } = playFunctions;
 
     if (viewMode === ViewMode.GRID) {
         return (
-            <BusinessGrid 
-            businesses={displayedList} 
-            onSelect={(id) => { playClick(); handlers.handleSelectBusiness(id); }}
-            selectedId={state.selectedBusinessId} 
-            onHover={(id) => { if (id && id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
-            isLoading={state.isSearching}
+            <BusinessGrid
+                businesses={displayedList}
+                onSelect={(id) => { playClick(); handlers.handleSelectBusiness(id); }}
+                selectedId={state.selectedBusinessId}
+                onHover={(id) => { if (id && id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
+                isLoading={state.isSearching}
             />
         );
     }
     if (viewMode === ViewMode.MAP) {
         return (
-            <RealMap 
-            userLocation={state.userLocation} 
-            businesses={displayedList} 
-            onSelect={(id) => { playClick(); handlers.handleSelectBusiness(id); }}
-            selectedId={state.selectedBusinessId} 
-            hoveredId={hoveredBusinessId}
-            setHoveredId={(id) => { if (id && id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
-            onRescan={() => { playScan(); handlers.handleRescan(); }}
-            activeItinerary={activeItinerary}
-            weather={weather}
+            <RealMap
+                userLocation={state.userLocation}
+                businesses={displayedList}
+                onSelect={(id) => { playClick(); handlers.handleSelectBusiness(id); }}
+                selectedId={state.selectedBusinessId}
+                hoveredId={hoveredBusinessId}
+                setHoveredId={(id) => { if (id && id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
+                onRescan={() => { playScan(); handlers.handleRescan(); }}
+                activeItinerary={activeItinerary}
             />
         );
     }
     return (
-        <RadarMap 
-            userLocation={state.userLocation} 
-            businesses={displayedList} 
-            selectedId={state.selectedBusinessId} 
+        <RadarMap
+            userLocation={state.userLocation}
+            businesses={displayedList}
+            selectedId={state.selectedBusinessId}
             onSelect={(id) => { playClick(); handlers.handleSelectBusiness(id); }}
             onRescan={() => { playScan(); handlers.handleRescan(); }}
             hoveredId={hoveredBusinessId}
             setHoveredId={(id) => { if (id && id !== hoveredBusinessId) playHover(); setHoveredBusinessId(id); }}
-            weather={weather}
         />
     );
 };
