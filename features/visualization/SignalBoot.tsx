@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 export const SignalBoot: React.FC = () => {
     const [text, setText] = useState("");
-    const tagline = "COMBINING AI-SEARCH // VOICE INTERACTION // INTELLIGENT INSIGHTS";
+    const tagline = "AI-SEARCH // VOICE INTERACTION // INTELLIGENT INSIGHTS 2.0";
 
     useEffect(() => {
         let i = 0;
@@ -37,7 +37,7 @@ export const SignalBoot: React.FC = () => {
                         <h1 className="text-4xl font-black tracking-[0.2em] text-white">LOCALSPOT</h1>
                         <div className="h-px w-full bg-gradient-to-r from-primary via-white/50 to-transparent"></div>
                         <div className="flex justify-between items-center text-[10px] font-mono text-primary tracking-widest mt-1">
-                            <span>SYS_BOOT_V2.5</span>
+                            <span>SYS_BOOT_V2.0</span>
                             <span className="animate-pulse">ONLINE</span>
                         </div>
                     </div>

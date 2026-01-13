@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
                     </span>
                     <span className="tracking-widest font-bold">SYSTEM_ONLINE</span>
                 </span>
-                <span className="hidden md:inline text-zinc-500 tracking-wider">V2.5.0 // INTELLIGENT_NETWORK</span>
+                <span className="hidden md:inline text-zinc-500 tracking-wider">V2.0.0 // INTELLIGENT_NETWORK</span>
             </div>
 
             <div className="flex-1 mx-8 overflow-hidden relative opacity-60 hidden sm:block">
