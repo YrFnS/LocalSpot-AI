@@ -34,11 +34,9 @@ const App: React.FC = () => {
     isVisionOpen,
     setIsVisionOpen,
     isVisionAnalyzing,
-    handleVisionAnalyze,
     isSynthesizerOpen,
     setIsSynthesizerOpen,
     isSynthesizing,
-    handleVibeSearch,
     aiSuggestions,
     aiAnalysisResult,
     filters,
@@ -136,14 +134,14 @@ const App: React.FC = () => {
       <VisionModal 
          isOpen={isVisionOpen} 
          onClose={() => setIsVisionOpen(false)} 
-         onAnalyze={(img) => { playFunctions.playScan(); handleVisionAnalyze(img); }}
+         onAnalyze={(img) => { playFunctions.playScan(); handlers.handleVisionAnalyze(img); }}
          isAnalyzing={isVisionAnalyzing}
       />
 
       <VibeSynthesizer 
          isOpen={isSynthesizerOpen} 
          onClose={() => setIsSynthesizerOpen(false)} 
-         onSynthesize={(v) => { playFunctions.playScan(); handleVibeSearch(v); }}
+         onSynthesize={(v) => { playFunctions.playScan(); handlers.handleVibeSearch(v); }}
          isProcessing={isSynthesizing} 
       />
 
