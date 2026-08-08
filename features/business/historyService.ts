@@ -1,42 +1,25 @@
-
-import { ai } from "../ai/client";
-import { Business } from "../../types";
+import type { Business } from "../../types";
+import { notifyOpenRouterError, openRouterChat, parseJsonResponse } from "../ai/openrouter.mjs";
 
 export interface HistoricalData {
-    summary: string;
-    era: string;
-    visualPrompt: string;
+  summary: string;
+  era: string;
+  visualPrompt: string;
 }
 
 export const getHistoricalContext = async (business: Business): Promise<HistoricalData | null> => {
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: `
-                Research the history of the location: "${business.name}" at "${business.address}".
-                
-                If the exact building history is unknown, infer the likely history of this neighborhood/district during its peak historical era (e.g., 1920s, 1950s, 1890s).
-                
-                Task:
-                1. Identify a specific historical "Era" (e.g. "Roaring 20s", "Post-War 1950s").
-                2. Write a 2-sentence "Summary" of what this location used to be or the vibe of the area then.
-                3. Create a "VisualPrompt" to generate a photo of the building exterior from that time.
-                
-                Output JSON:
-                {
-                    "summary": "string",
-                    "era": "string",
-                    "visualPrompt": "string"
-                }
-            `,
-            config: {
-                responseMimeType: 'application/json'
-            }
-        });
-
-        return JSON.parse(response.text || "null");
-    } catch (error) {
-        console.error("History Service Error:", error);
-        return null;
+  try {
+    const content = await openRouterChat([{
+      role: "user",
+      content: `Research the history of "${business.name}" at "${business.address}". If exact building history is unknown, clearly label a likely neighborhood-era inference. Return only JSON with string fields summary, era, and visualPrompt.`,
+    }]);
+    const data = parseJsonResponse(content) as Partial<HistoricalData>;
+    if (!data || typeof data.summary !== "string" || typeof data.era !== "string" || typeof data.visualPrompt !== "string") {
+      throw new Error("The selected model returned incomplete historical data. Try another model.");
     }
+    return data as HistoricalData;
+  } catch (error) {
+    notifyOpenRouterError(error);
+    return null;
+  }
 };

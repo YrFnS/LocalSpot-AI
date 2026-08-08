@@ -1,15 +1,13 @@
-
-import { ai } from "../ai/client";
-import { Business } from "../../types";
+import type { Business } from "../../types";
+import { notifyOpenRouterError, openRouterChat } from "../ai/openrouter.mjs";
 
 export const askBusinessQuestion = async (business: Business, question: string): Promise<string> => {
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Business: ${business.name}. Details: ${JSON.stringify(business)}. Question: "${question}". Answer concisely as a local guide.`
-        });
-        return response.text || "I couldn't find that info.";
-    } catch (error) {
-        return "Concierge unavailable.";
-    }
+  try {
+    return await openRouterChat([{
+      role: "user",
+      content: `Business: ${business.name}. Details: ${JSON.stringify(business)}. Question: "${question}". Answer concisely as a local guide.`,
+    }]);
+  } catch (error) {
+    return notifyOpenRouterError(error);
+  }
 };

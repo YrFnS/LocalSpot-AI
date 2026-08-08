@@ -16,7 +16,6 @@ export const useUIController = () => {
     const [hoveredBusinessId, setHoveredBusinessId] = useState<string | null>(null);
 
     // Modal/Overlay States
-    const [isOracleOpen, setIsOracleOpen] = useState(false);
     const [isCuratorOpen, setIsCuratorOpen] = useState(false);
     const [isVisionOpen, setIsVisionOpen] = useState(false);
     const [isSynthesizerOpen, setIsSynthesizerOpen] = useState(false);
@@ -32,7 +31,6 @@ export const useUIController = () => {
         themeClass,
         isAudioPlaying,
         hoveredBusinessId,
-        isOracleOpen,
         isCuratorOpen,
         isVisionOpen,
         isSynthesizerOpen,
@@ -45,7 +43,6 @@ export const useUIController = () => {
         setThemeClass,
         setIsAudioPlaying,
         setHoveredBusinessId,
-        setIsOracleOpen,
         setIsCuratorOpen,
         setIsVisionOpen,
         setIsSynthesizerOpen,

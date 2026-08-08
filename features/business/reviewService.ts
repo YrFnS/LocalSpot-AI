@@ -1,48 +1,29 @@
-
-import { ai } from "../ai/client";
-import { Business } from "../../types";
+import type { Business } from "../../types";
+import { notifyOpenRouterError, openRouterChat, parseJsonResponse } from "../ai/openrouter.mjs";
 
 export interface SentimentAnalysis {
-    summary: string;
-    keywords: string[];
-    sentimentScore: number; // 0-100
-    warnings: string[];
+  summary: string;
+  keywords: string[];
+  sentimentScore: number;
+  warnings: string[];
 }
 
-export const analyzeSentiment = async (reviews: Business['reviews']): Promise<SentimentAnalysis | null> => {
-    if (!reviews || reviews.length === 0) return null;
-    
-    try {
-        const reviewText = reviews.slice(0, 10).map(r => r.text.text).join("\n");
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `
-                Analyze these reviews for a local business.
-                Reviews:
-                ${reviewText}
+export const analyzeSentiment = async (reviews: Business["reviews"]): Promise<SentimentAnalysis | null> => {
+  if (!reviews?.length) return null;
 
-                Task:
-                1. Write a 1-sentence tactical summary of the consensus.
-                2. Extract 3-5 distinct keywords (e.g., "Loud", "Tasty", "Slow Service").
-                3. Rate the sentiment from 0 (Negative) to 100 (Positive).
-                4. Identify any warnings/complaints (if any).
-
-                Response JSON Schema:
-                {
-                    "summary": "string",
-                    "keywords": ["string"],
-                    "sentimentScore": number,
-                    "warnings": ["string"]
-                }
-            `,
-            config: {
-                responseMimeType: 'application/json'
-            }
-        });
-        
-        return JSON.parse(response.text || "null");
-    } catch (error) {
-        console.error("Sentiment Analysis Error", error);
-        return null;
+  try {
+    const reviewText = reviews.slice(0, 10).map((review) => review.text.text).join("\n");
+    const content = await openRouterChat([{
+      role: "user",
+      content: `Analyze these reviews. Return only JSON with summary (string), keywords (3-5 strings), sentimentScore (0-100 number), and warnings (string array).\n\n${reviewText}`,
+    }]);
+    const data = parseJsonResponse(content) as Partial<SentimentAnalysis>;
+    if (!data || typeof data.summary !== "string" || !Array.isArray(data.keywords) || typeof data.sentimentScore !== "number" || !Array.isArray(data.warnings)) {
+      throw new Error("The selected model returned incomplete sentiment data. Try another model.");
     }
+    return data as SentimentAnalysis;
+  } catch (error) {
+    notifyOpenRouterError(error);
+    return null;
+  }
 };

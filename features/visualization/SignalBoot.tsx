@@ -1,5 +1,6 @@
 
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 export const SignalBoot: React.FC = () => {
     const [text, setText] = useState("");
@@ -71,7 +72,7 @@ export const SignalBoot: React.FC = () => {
                     </div>
                     <div className="flex justify-center gap-2 items-center animate-[fade-in_0.3s_0.8s_both]">
                         <span className="w-1 h-1 bg-green-500 rounded-full"></span>
-                        <span>CONNECTING TO GEMINI NEURAL NET...</span>
+                        <span>PREPARING OPENROUTER LINK...</span>
                     </div>
                     <div className="flex justify-center gap-2 items-center animate-[fade-in_0.3s_1.4s_both]">
                         <span className="w-1 h-1 bg-green-500 rounded-full"></span>

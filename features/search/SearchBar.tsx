@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import type React from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTypewriter } from '../ui/useTypewriter';
 import { useSpeechRecognition } from './useSpeechRecognition';
 
@@ -90,7 +91,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, sug
             type="button"
             onClick={onOpenVision}
             className="p-3 transition-colors text-zinc-500 hover:text-white hover:bg-zinc-900 border-l border-zinc-800"
-            title="Gemini Lens"
+            title="AI Lens"
         >
              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
         </button>
@@ -124,7 +125,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isSearching, sug
         <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-950/95 backdrop-blur-md border border-zinc-800 shadow-[0_10px_40px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-100 overflow-hidden z-[60]">
           <div className="px-3 py-2 text-[9px] font-mono text-primary bg-primary/5 uppercase tracking-[0.2em] border-b border-primary/20 flex justify-between">
              <span>AI SUGGESTIONS</span>
-             <span className="opacity-50">GEMINI-3-FLASH</span>
+             <span className="opacity-50">OPENROUTER</span>
           </div>
           {filteredSuggestions.map((suggestion, idx) => (
             <button

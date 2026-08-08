@@ -1,11 +1,11 @@
 
-import React from 'react';
+import type React from 'react';
 import { SearchBar } from '../search/SearchBar';
 import { FilterBar } from '../search/FilterBar';
 import { CategorySelector } from '../discovery/CategorySelector';
 import { AudioVisualizer } from '../visualization/AudioVisualizer';
 import { ContextHud } from '../context/ContextHud';
-import { Tab, ViewMode, WeatherState, FilterState } from '../../types';
+import { Tab, ViewMode, type WeatherState, type FilterState } from '../../types';
 
 interface HeaderProps {
     activeTab: Tab;
@@ -25,6 +25,8 @@ interface HeaderProps {
     setFilters: (filters: FilterState) => void;
     handlers: any; // App handlers
     playFunctions: any; // SoundFX
+    aiConfigured: boolean;
+    onOpenAiSettings: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -43,7 +45,9 @@ export const Header: React.FC<HeaderProps> = ({
     filters,
     setFilters,
     handlers,
-    playFunctions
+    playFunctions,
+    aiConfigured,
+    onOpenAiSettings
 }) => {
     const { playClick, playHover, playScan } = playFunctions;
 
@@ -87,6 +91,17 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                    <button
+                        onClick={() => { playClick(); onOpenAiSettings(); }}
+                        onMouseEnter={playHover}
+                        className={`flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-sm border text-[10px] font-mono transition-colors ${aiConfigured ? 'bg-emerald-950/30 border-emerald-700 text-emerald-300' : 'bg-primary/10 border-primary text-primary'}`}
+                        aria-label="Open OpenRouter AI settings"
+                        title="OpenRouter AI Settings"
+                    >
+                        <span className={`w-2 h-2 rounded-full ${aiConfigured ? 'bg-emerald-400' : 'bg-primary animate-pulse'}`}></span>
+                        <span className="hidden sm:inline">{aiConfigured ? 'AI READY' : 'AI SETUP'}</span>
+                        <span className="sm:hidden">AI</span>
+                    </button>
                     <AudioVisualizer isPlaying={isAudioPlaying} />
                     
                     <button

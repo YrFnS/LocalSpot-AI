@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { BusinessDetailModal } from './features/business/BusinessDetailModal';
-import { OracleOverlay } from './features/live/OracleOverlay';
 import { CuratorPanel } from './features/curator/CuratorPanel';
 import { VisionModal } from './features/search/VisionModal';
 import { CompareTray } from './features/comparison/CompareTray';
@@ -12,7 +11,8 @@ import { Header } from './features/layout/Header';
 import { Sidebar } from './features/layout/Sidebar';
 import { Footer } from './features/layout/Footer';
 import { Viewport } from './features/visualization/Viewport';
-import { useLiveSession } from './features/live/useLiveSession';
+import { OpenRouterSettings } from './features/ai/OpenRouterSettings';
+import { isOpenRouterConfigured } from './features/ai/openrouter.mjs';
 import { useAppController } from './features/app/useAppController';
 import { useSoundFX } from './features/audio/useSoundFX';
 import { ViewMode } from './types';
@@ -27,8 +27,6 @@ const App: React.FC = () => {
     setViewMode,
     isAudioPlaying,
     themeClass,
-    isOracleOpen,
-    setIsOracleOpen,
     isCuratorOpen,
     setIsCuratorOpen,
     isVisionOpen,
@@ -62,33 +60,16 @@ const App: React.FC = () => {
 
   const playFunctions = useSoundFX();
   const { playClick, playSuccess } = playFunctions;
+  const [isAiSettingsOpen, setIsAiSettingsOpen] = React.useState(false);
+  const [, setAiConfigVersion] = React.useState(0);
+  const [aiError, setAiError] = React.useState('');
+  const aiConfigured = isOpenRouterConfigured();
 
-  const handleLiveToolCall = async (name: string, args: any) => {
-    if (name === 'searchMap' && args.query) {
-      await handlers.handleSearch(args.query);
-      return { success: true };
-    }
-    return { success: false };
-  };
-
-  const {
-    connect: connectLive,
-    disconnect: disconnectLive,
-    isConnected: isLiveConnected,
-    isSpeaking: isLiveSpeaking,
-    volume: liveVolume,
-    transcripts,
-    realtimeText,
-    sendVideoFrame
-  } = useLiveSession({
-    onToolCall: handleLiveToolCall
-  });
-
-  const toggleOracle = () => {
-    playClick();
-    if (isOracleOpen) { disconnectLive(); setIsOracleOpen(false); }
-    else { setIsOracleOpen(true); connectLive(); }
-  };
+  React.useEffect(() => {
+    const handleAiError = (event: Event) => setAiError((event as CustomEvent<string>).detail);
+    window.addEventListener('localspot:ai-error', handleAiError);
+    return () => window.removeEventListener('localspot:ai-error', handleAiError);
+  }, []);
 
   const selectedBusiness = handlers.getSelectedBusiness();
 
@@ -111,16 +92,21 @@ const App: React.FC = () => {
       <div className="absolute inset-0 z-[1] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] pointer-events-none"></div>
       <div className="absolute inset-0 z-[1] shadow-[inset_0_0_100px_rgba(0,0,0,0.8)] pointer-events-none"></div>
 
-      <OracleOverlay
-        isOpen={isOracleOpen}
-        onClose={toggleOracle}
-        isConnected={isLiveConnected}
-        isSpeaking={isLiveSpeaking}
-        volume={liveVolume}
-        transcripts={transcripts}
-        realtimeText={realtimeText}
-        onSendFrame={sendVideoFrame}
+      <OpenRouterSettings
+        isOpen={isAiSettingsOpen}
+        onClose={() => setIsAiSettingsOpen(false)}
+        onChange={() => { setAiConfigVersion((version) => version + 1); setAiError(''); }}
       />
+
+      {aiError && (
+        <div className="fixed left-3 right-3 top-3 md:left-auto md:right-6 md:top-6 md:w-[420px] z-[140] border border-red-800 bg-red-950/95 p-4 shadow-2xl" role="alert">
+          <p className="text-xs font-mono text-red-100">{aiError}</p>
+          <div className="mt-3 flex gap-2">
+            <button onClick={() => setIsAiSettingsOpen(true)} className="px-3 py-1.5 bg-primary text-black text-[10px] font-mono font-bold">OPEN AI SETTINGS</button>
+            <button onClick={() => setAiError('')} className="px-3 py-1.5 border border-red-800 text-red-200 text-[10px] font-mono">DISMISS</button>
+          </div>
+        </div>
+      )}
 
       <CuratorPanel
         isOpen={isCuratorOpen}
@@ -181,6 +167,8 @@ const App: React.FC = () => {
         setFilters={setFilters}
         handlers={handlers}
         playFunctions={playFunctions}
+        aiConfigured={aiConfigured}
+        onOpenAiSettings={() => setIsAiSettingsOpen(true)}
       />
 
       <main className="flex-1 flex relative overflow-hidden z-10">
@@ -224,11 +212,6 @@ const App: React.FC = () => {
               </div>
             </div>
           )}
-
-          <button onClick={toggleOracle} className="absolute bottom-16 right-6 z-40 w-14 h-14 rounded-full bg-primary hover:bg-orange-500 text-black shadow-lg shadow-primary/30 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 group" title="Ask The Oracle">
-            <div className="absolute inset-0 rounded-full border-2 border-white/20 animate-[ping_3s_ease-in-out_infinite] pointer-events-none"></div>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:animate-pulse"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-          </button>
 
           {state.selectedBusinessId && (viewMode === ViewMode.RADAR || viewMode === ViewMode.MAP) && selectedBusiness && !showDetailModal && (
             <div onClick={() => { playClick(); handlers.handleOpenDetail(state.selectedBusinessId!); }} className="absolute bottom-16 left-4 right-4 md:left-auto md:right-24 md:w-80 glass-panel rounded-sm p-5 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 cursor-pointer hover:bg-zinc-900/80 transition-colors group">

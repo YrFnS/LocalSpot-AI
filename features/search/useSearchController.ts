@@ -1,10 +1,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { SearchState, Coordinates, WeatherState, FilterState, SortOption, WeatherCondition, VibeState } from '../../types';
+import { type SearchState, type Coordinates, type WeatherState, type FilterState, SortOption, type WeatherCondition, type VibeState } from '../../types';
 import { searchLocalBusinesses, getFeaturedBusinesses } from './searchService';
 import { getAiSuggestions, analyzeImageAndSearch, generateVibeQuery } from './searchInsights';
 import { getRandomWeather } from '../context/weatherService';
 import { useGeolocation } from '../location/useGeolocation';
+import { isOpenRouterConfigured, notifyOpenRouterError } from '../ai/openrouter.mjs';
 
 export const useSearchController = () => {
     const { location: userLocation } = useGeolocation();
@@ -36,10 +37,10 @@ export const useSearchController = () => {
         if (userLocation) {
             setState(s => ({ ...s, userLocation }));
             // Only fetch featured if we have no results and aren't searching
-            if (state.results.length === 0 && !state.isSearching) {
+            if (state.results.length === 0 && !state.isSearching && isOpenRouterConfigured()) {
                 getFeaturedBusinesses(userLocation, weather)
                     .then(featured => setState(s => ({ ...s, results: featured })))
-                    .catch(console.error);
+                    .catch(() => undefined);
             }
         }
     }, [userLocation]);
@@ -62,7 +63,7 @@ export const useSearchController = () => {
             const { businesses } = await searchLocalBusinesses(query, searchLocation, weather);
             setState(s => ({ ...s, results: businesses, isSearching: false }));
         } catch (error) {
-            setState(s => ({ ...s, isSearching: false, error: 'Connection failed.' }));
+            setState(s => ({ ...s, isSearching: false, error: notifyOpenRouterError(error) }));
         }
     }, [state.userLocation, weather]);
 
@@ -73,8 +74,8 @@ export const useSearchController = () => {
             setState(s => ({ ...s, results: result.businesses, isSearching: false, query: "Visual Search Match" }));
             setAiAnalysisResult(result.analysis);
             return true; // Success
-        } catch (e) {
-            setState(s => ({ ...s, error: 'Visual Analysis Failed' }));
+        } catch (error) {
+            setState(s => ({ ...s, error: notifyOpenRouterError(error) }));
             return false;
         } finally {
             setIsVisionAnalyzing(false);
@@ -87,8 +88,8 @@ export const useSearchController = () => {
             const query = await generateVibeQuery(vibes);
             await executeSearch(query);
             return true;
-        } catch (e) {
-            setState(s => ({ ...s, error: 'Synthesizer Failed' }));
+        } catch (error) {
+            setState(s => ({ ...s, error: notifyOpenRouterError(error) }));
             return false;
         } finally {
             setIsSynthesizing(false);

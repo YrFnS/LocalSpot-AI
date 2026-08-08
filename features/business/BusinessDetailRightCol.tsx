@@ -1,12 +1,11 @@
 
-import React from 'react';
-import { Business, BookingSlot } from '../../types';
+import type React from 'react';
+import type { Business, BookingSlot } from '../../types';
 import { BookingWidget } from './BookingWidget';
 import { BusinessConcierge } from './BusinessConcierge';
 import { UserAnnotations } from './UserAnnotations';
 import { PhotoGallery } from './PhotoGallery';
 import { ReviewList } from './ReviewList';
-import { EavesdropPlayer } from './EavesdropPlayer';
 import { MenuRecon } from './MenuRecon';
 
 interface BusinessDetailRightColProps {
@@ -57,9 +56,6 @@ export const BusinessDetailRightCol: React.FC<BusinessDetailRightColProps> = ({
                  
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                      <div className="space-y-8">
-                         {/* Eavesdrop Module */}
-                         <EavesdropPlayer business={business} />
-
                          {/* Booking Module */}
                          {business.bookingAvailable && business.slots && (
                              <div className="border border-zinc-800 p-4 bg-zinc-900/10">

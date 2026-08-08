@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Tab, ViewMode, Itinerary, Coordinates } from '../../types';
+import { Tab, ViewMode, type Itinerary, type Coordinates } from '../../types';
 import { speakDescription } from '../audio/audioGenService';
 import { useFavorites } from '../business/useFavorites';
 import { useMissions } from '../missions/useMissions';
@@ -102,7 +102,7 @@ export const useAppController = () => {
     }, [favorites]);
 
     const displayedList = useMemo(() => {
-        let list = uiCtrl.activeTab === Tab.SEARCH ? searchCtrl.state.results : favorites;
+        const list = uiCtrl.activeTab === Tab.SEARCH ? searchCtrl.state.results : favorites;
         return filterBusinesses(list, searchCtrl.filters);
     }, [uiCtrl.activeTab, searchCtrl.state.results, favorites, searchCtrl.filters]);
 
@@ -145,8 +145,6 @@ export const useAppController = () => {
         setViewMode: uiCtrl.setViewMode,
         isAudioPlaying: uiCtrl.isAudioPlaying,
         themeClass: uiCtrl.themeClass,
-        isOracleOpen: uiCtrl.isOracleOpen,
-        setIsOracleOpen: uiCtrl.setIsOracleOpen,
         isCuratorOpen: uiCtrl.isCuratorOpen,
         setIsCuratorOpen: uiCtrl.setIsCuratorOpen,
         isVisionOpen: uiCtrl.isVisionOpen,

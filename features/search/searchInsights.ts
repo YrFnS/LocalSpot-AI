@@ -1,101 +1,46 @@
-
-import { ai } from "../ai/client";
-import { Coordinates, WeatherState, VibeState, Business } from "../../types";
+import type { Business, Coordinates, VibeState, WeatherState } from "../../types";
+import { isOpenRouterConfigured, openRouterChat, parseJsonResponse } from "../ai/openrouter.mjs";
 import { getWeatherDescription } from "../context/weatherService";
 import { searchLocalBusinesses } from "./searchService";
 
-export const getAiSuggestions = async (
-    userLocation: Coordinates | null,
-    weather?: WeatherState
-): Promise<string[]> => {
-    try {
-        const timeContext = new Date().toLocaleString('en-US', { 
-            weekday: 'long', hour: 'numeric', minute: 'numeric' 
-        });
-        const weatherContext = weather ? getWeatherDescription(weather) : "Unknown";
-        
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `
-                Context: User is in ${userLocation ? `${userLocation.latitude}, ${userLocation.longitude}` : 'San Francisco'}.
-                Time: ${timeContext}.
-                Weather: ${weatherContext}.
-                
-                Task: Generate 5 short, distinct, punchy local search queries relevant to the current context (time/weather).
-                If raining, suggest cozy/indoor. If sunny, suggest outdoor/parks.
-                Examples: "Late night ramen", "Quiet cafes", "Live jazz".
-                
-                Output: JSON Array of strings only.
-            `,
-            config: {
-                responseMimeType: 'application/json'
-            }
-        });
+const fallbackSuggestions = ["Best coffee nearby", "Lunch spots", "Parks", "Dinner dates", "Cocktail bars"];
 
-        return JSON.parse(response.text || "[]");
-    } catch (e) {
-        return ["Best coffee nearby", "Lunch spots", "Parks", "Dinner dates", "Cocktail bars"];
-    }
+export const getAiSuggestions = async (userLocation: Coordinates | null, weather?: WeatherState): Promise<string[]> => {
+  if (!isOpenRouterConfigured()) return fallbackSuggestions;
+  try {
+    const content = await openRouterChat([{
+      role: "user",
+      content: `Generate five short local search queries for location ${userLocation ? `${userLocation.latitude}, ${userLocation.longitude}` : "unknown"}, time ${new Date().toLocaleString("en-US")}, and weather ${weather ? getWeatherDescription(weather) : "unknown"}. Return only a JSON array of strings.`,
+    }]);
+    const data = parseJsonResponse(content);
+    if (!Array.isArray(data) || !data.every((item) => typeof item === "string")) throw new Error("The selected model returned invalid search suggestions.");
+    return data.slice(0, 5);
+  } catch {
+    return fallbackSuggestions;
+  }
 };
 
 export const analyzeImageAndSearch = async (
-    base64Image: string,
-    userLocation: Coordinates | null,
-    weather?: WeatherState
+  base64Image: string,
+  userLocation: Coordinates | null,
+  weather?: WeatherState,
 ): Promise<{ text: string; businesses: Business[]; analysis: string }> => {
-    try {
-        // 1. Analyze Image using Gemini 2.5 Flash (Multimodal)
-        const visionResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: {
-                parts: [
-                    { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-                    { text: "Analyze this image. Describe the 'vibe', interior style, or food type in 1 short sentence. Then, generate a specific search query to find LOCAL places that match this aesthetic or serve this item. Format: JSON { \"analysis\": \"...\", \"query\": \"...\" }" }
-                ]
-            },
-            config: {
-                responseMimeType: 'application/json'
-            }
-        });
-
-        const visionData = JSON.parse(visionResponse.text || "{}");
-        const query = visionData.query || "cool places like this";
-        const analysis = visionData.analysis || "Visual match found.";
-
-        // 2. Perform Grounded Search (Delegated to searchService)
-        const searchResult = await searchLocalBusinesses(query, userLocation, weather);
-        
-        return {
-            ...searchResult,
-            analysis
-        };
-    } catch (error) {
-        console.error("Vision Search Error", error);
-        return { text: "Visual analysis failed.", businesses: [], analysis: "Error analyzing image." };
-    }
+  const content = await openRouterChat([{
+    role: "user",
+    content: [
+      { type: "text", text: "Describe this image's vibe, interior style, or food in one short sentence and create a local-place search query. Return only JSON with analysis and query string fields." },
+      { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
+    ],
+  }]);
+  const data = parseJsonResponse(content) as { analysis?: unknown; query?: unknown };
+  if (!data || typeof data.analysis !== "string" || typeof data.query !== "string") {
+    throw new Error("The selected model returned invalid visual analysis. Try a vision-capable model.");
+  }
+  const searchResult = await searchLocalBusinesses(data.query, userLocation, weather);
+  return { ...searchResult, analysis: data.analysis };
 };
 
-export const generateVibeQuery = async (vibes: VibeState): Promise<string> => {
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `
-                You are a Vibe Translator. Convert these abstract parameters into a specific, evocative search query for finding a physical place (restaurant, bar, park, shop, venue).
-
-                PARAMETERS:
-                Entropy: ${vibes.entropy}% (0=Serene/Minimalist, 100=Chaotic/High Energy/Loud)
-                Grit: ${vibes.grit}% (0=Polished/Luxury/Clean, 100=Raw/Industrial/Grunge)
-                Epoch: ${vibes.epoch}% (0=Historic/Vintage/Retro, 100=Futuristic/Modern/Neon)
-                Obscurity: ${vibes.obscurity}% (0=Mainstream/Famous, 100=Hidden/Secret/Local Only)
-
-                TASK:
-                Output JUST the search query string. Make it descriptive.
-                Example for High Grit, High Obscurity: "Grungy dive bars hidden in alleyways"
-                Example for Low Entropy, High Epoch: "Minimalist futuristic quiet cafes"
-            `
-        });
-        return response.text?.trim() || "cool places";
-    } catch (error) {
-        return "hidden gems";
-    }
-};
+export const generateVibeQuery = (vibes: VibeState): Promise<string> => openRouterChat([{
+  role: "user",
+  content: `Convert these parameters into one specific local-place search query. Entropy ${vibes.entropy}/100, grit ${vibes.grit}/100, epoch ${vibes.epoch}/100, obscurity ${vibes.obscurity}/100. Return only the query, without quotes or explanation.`,
+}]);

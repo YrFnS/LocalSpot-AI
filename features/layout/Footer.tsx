@@ -1,5 +1,5 @@
 
-import React from 'react';
+import type React from 'react';
 
 export const Footer: React.FC = () => {
     return (
@@ -23,7 +23,7 @@ export const Footer: React.FC = () => {
                     <span className="mx-8 text-zinc-500">ESTABLISHING SECURE CONNECTION...</span>
                     <span className="mx-8 text-primary/70">GEOSPATIAL DATA STREAM: ACTIVE</span>
                     <span className="mx-8 text-zinc-500">AUDIO UPLINK: STANDBY</span>
-                    <span className="mx-8 text-primary/70">GEMINI AGENTS: LISTENING</span>
+                    <span className="mx-8 text-primary/70">OPENROUTER: USER CONFIGURED</span>
                     <span className="mx-8 text-zinc-500">ENCRYPTION: AES-256</span>
                 </div>
                 {/* Gradient Masks for Marquee */}

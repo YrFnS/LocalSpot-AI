@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
-import { Business } from '../../types';
-import { getHistoricalContext, HistoricalData } from './historyService';
+import type React from 'react';
+import { useState, useEffect } from 'react';
+import type { Business } from '../../types';
+import { getHistoricalContext, type HistoricalData } from './historyService';
 import { generateHistoryVisual } from './visualService';
 import { useSoundFX } from '../audio/useSoundFX';
 
@@ -114,7 +115,7 @@ export const ChronoLens: React.FC<ChronoLensProps> = ({ business, isActive, onTo
                         
                         <div className="mt-4 flex gap-4 text-[9px] font-mono text-amber-700 uppercase tracking-widest">
                             <span>REF: {business.id.substring(0, 8)}</span>
-                            <span>SOURCE: GEMINI_RESEARCH</span>
+                            <span>SOURCE: OPENROUTER</span>
                         </div>
                     </div>
                 </div>
