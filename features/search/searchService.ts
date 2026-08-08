@@ -1,8 +1,8 @@
 
-import { Business, Coordinates, WeatherState } from "../../types";
+import type { Business, Coordinates, WeatherState } from "../../types";
 import { mapAiResponseToBusiness } from "../business/businessMapper";
 import { getWeatherDescription } from "../context/weatherService";
-import { ai } from "../ai/client";
+import { ai, isAiConfigured } from "../ai/client";
 
 export const getFeaturedBusinesses = async (
     userLocation: Coordinates | null,
@@ -21,7 +21,8 @@ export const searchLocalBusinesses = async (
   userLocation: Coordinates | null,
   weather?: WeatherState
 ): Promise<{ text: string; businesses: Business[] }> => {
-  
+  if (!isAiConfigured) return { text: "Search unavailable", businesses: [] };
+
   try {
     const groundModel = 'gemini-2.5-flash';
     const structureModel = 'gemini-3-flash-preview';

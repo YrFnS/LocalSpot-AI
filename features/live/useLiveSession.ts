@@ -1,6 +1,7 @@
 
 import { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, LiveServerMessage, Modality, FunctionDeclaration, Type } from "@google/genai";
+import { type LiveServerMessage, Modality, type FunctionDeclaration, Type } from "@google/genai";
+import { ai, isAiConfigured } from '../ai/client';
 import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32 } from './streamUtils';
 
 interface UseLiveSessionProps {
@@ -23,7 +24,6 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
   const [transcripts, setTranscripts] = useState<LiveTranscript[]>([]);
   const [realtimeText, setRealtimeText] = useState<{role: 'user'|'model', text: string} | null>(null);
 
-  const ai = useRef(new GoogleGenAI({ apiKey: process.env.API_KEY })).current;
   const audioContext = useRef<AudioContext | null>(null);
   const inputSource = useRef<MediaStreamAudioSourceNode | null>(null);
   const processor = useRef<ScriptProcessorNode | null>(null);
@@ -51,7 +51,7 @@ export const useLiveSession = ({ onToolCall }: UseLiveSessionProps) => {
   };
 
   const connect = async () => {
-    if (isConnected) return;
+    if (isConnected || !isAiConfigured) return;
 
     try {
       // 1. Setup Audio Context
